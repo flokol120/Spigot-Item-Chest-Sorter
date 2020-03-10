@@ -39,6 +39,7 @@ class Commands: CommandExecutor {
                     false
                 }
             }
+            // TODO: Add remove logic
             "remove" -> {
                 when(args[1].toLowerCase()){
                     "sender" -> {
