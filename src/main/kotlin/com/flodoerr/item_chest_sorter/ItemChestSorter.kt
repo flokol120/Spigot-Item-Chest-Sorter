@@ -13,7 +13,7 @@ class ItemChestSorter: JavaPlugin() {
         db = JsonHelper(dataFolder, server.consoleSender)
 
         // register commands
-        getCommand(BASE_COMMAND)!!.setExecutor(Commands())
+        getCommand(BASE_COMMAND)!!.setExecutor(Commands(db))
 
         // register tab completer
         getCommand(BASE_COMMAND)!!.setTabCompleter { _, _, _, args ->

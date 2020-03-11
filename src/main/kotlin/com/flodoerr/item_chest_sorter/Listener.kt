@@ -2,9 +2,13 @@ package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.*
 import kotlinx.coroutines.*
+import net.md_5.bungee.api.chat.ClickEvent
+import net.md_5.bungee.api.chat.ComponentBuilder
+import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.ChatColor
 import org.bukkit.Location
 import org.bukkit.World
+import org.bukkit.block.Block
 import org.bukkit.block.Chest
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
@@ -40,46 +44,13 @@ class Listener(private val db: JsonHelper): Listener {
                 val isChest = block.blockData is org.bukkit.block.data.type.Chest
 
                 if(isChest) {
-
                     if(fireLevel == 65535 && displayName == SENDER_HOE_NAME) {
                         runBlocking {
-                            val existingSender = db.getSenderByCords(locationToCords(block.location))
-                            if(existingSender != null) {
-                                currentSender = existingSender
-                                e.player.sendMessage("Sender chest with id '${existingSender.sid}' is now selected")
-                                e.player.inventory.setItemInMainHand(null)
-                            }else{
-                                val chestLocation = getChestLocation((block.state as Chest).inventory)
-                                var sid = "${chestLocation.left.x}-${chestLocation.left.y}-${chestLocation.left.z}-sender"
-                                sid += if(chestLocation.right != null) {
-                                    "-double-chest"
-                                }else{
-                                    "-chest"
-                                }
-                                val sender = Sender(sid, "Sender", chestLocation)
-                                currentSender = sender
-                                db.addSender(sender)
-
-                                e.player.inventory.setItemInMainHand(null)
-
-                                e.player.sendMessage("${ChatColor.GREEN}Successfully saved this chest as sender chest. Because you used the hoe tool the id was auto generated ${ChatColor.GRAY}(${sid})${ChatColor.GREEN}. This chest was also selected as current sender")
-                            }
+                            handleSenderHoe(e.player, block)
                         }
                     }else if(arrowLevel == 65535 && displayName == RECEIVER_HOE_NAME) {
                         runBlocking {
-                            if(currentSender != null) {
-                                val chestLocation = getChestLocation((block.state as Chest).inventory)
-                                var rid = "${chestLocation.left.x}-${chestLocation.left.y}-${chestLocation.left.z}-receiver"
-                                rid += if(chestLocation.right != null) {
-                                    "-double-chest"
-                                }else{
-                                    "-chest"
-                                }
-                                db.addReceiverToSender(Receiver(rid, chestLocation), currentSender!!)
-                                e.player.sendMessage("${ChatColor.GREEN}Successfully saved this chest as a receiver chest. Because you used the hoe tool the id was auto generated (${rid}).")
-                            }else{
-                                e.player.sendMessage("${ChatColor.YELLOW}Currently there is no sender chest selected. At first select a sender chest using /sorter select sender and right clicking a sender chest")
-                            }
+                            handleReceiverHoe(e.player, block)
                         }
                     }
                 }
@@ -190,7 +161,20 @@ class Listener(private val db: JsonHelper): Listener {
                     }
                 }
             }else{
-                player.sendMessage("${ChatColor.YELLOW}There are no receivers configured yet. Use the ${ChatColor.GRAY}${ChatColor.ITALIC}'/sorter add receiver' ${ChatColor.RESET}${ChatColor.YELLOW}command.")
+                // some ugly chat message :( ...
+                val m1 = TextComponent("There are no receivers configured yet. Use the ")
+                m1.color = net.md_5.bungee.api.ChatColor.YELLOW
+                player.spigot().sendMessage(m1)
+                val m2 = TextComponent("/ics add receiver ")
+                m2.isItalic = true
+                m2.color = net.md_5.bungee.api.ChatColor.GRAY
+                m2.isUnderlined = true
+                m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics add receiver")
+                val m3 = TextComponent("command.")
+                m3.color = net.md_5.bungee.api.ChatColor.YELLOW
+                m1.addExtra(m2)
+                m1.addExtra(m3)
+                player.spigot().sendMessage(m1)
             }
         }
     }
@@ -298,5 +282,106 @@ class Listener(private val db: JsonHelper): Listener {
             left = locationToCords(chest.location!!)
         }
         return ChestLocation(left, right)
+    }
+
+    /**
+     * handles the sender hoe behavior
+     * @param player Player
+     * @param block chest
+     *
+     * @author Flo Dörr
+     */
+    private suspend fun handleSenderHoe(player: Player, block: Block) {
+        val existingSender = db.getSenderByCords(locationToCords(block.location))
+        if(existingSender != null) {
+            currentSender = existingSender
+            player.sendMessage("${ChatColor.GREEN}Sender chest with id '${existingSender.sid}' is now selected")
+            player.inventory.setItemInMainHand(null)
+            player.sendMessage("${ChatColor.YELLOW}If you want to remove this chest instead, please click on the next message in the chat (!This also implies the deletion of the receiver chests!):")
+
+            val message = TextComponent("delete")
+            message.color = net.md_5.bungee.api.ChatColor.RED
+            message.isUnderlined = true
+            message.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${existingSender.sid}")
+            player.spigot().sendMessage(message)
+        }else{
+            val chestLocation = getChestLocation((block.state as Chest).inventory)
+            var sid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~sender"
+            sid += if(chestLocation.right != null) {
+                "~double~chest"
+            }else{
+                "~chest"
+            }
+            val sender = Sender(sid, "Sender", chestLocation)
+            currentSender = sender
+            db.addSender(sender)
+
+            player.inventory.setItemInMainHand(null)
+
+            player.sendMessage("${ChatColor.GREEN}Successfully saved this chest as sender chest. Because you used the hoe tool the id was auto generated ${ChatColor.GRAY}(${sid})${ChatColor.GREEN}. This chest was also selected as current sender")
+        }
+    }
+
+    /**
+     * handles the receiver hoe behavior
+     * @param player Player
+     * @param block chest
+     *
+     * @author Flo Dörr
+     */
+    private suspend fun handleReceiverHoe(player: Player, block: Block) {
+        if(currentSender != null) {
+            val chestLocation = getChestLocation((block.state as Chest).inventory)
+            val existingChest = db.getSavedChestFromCords(chestLocation.left)
+            if(existingChest == null) {
+                var rid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~receiver"
+                rid += if(chestLocation.right != null) {
+                    "~double~chest"
+                }else{
+                    "~chest"
+                }
+                db.addReceiverToSender(Receiver(rid, chestLocation), currentSender!!)
+                player.sendMessage("${ChatColor.GREEN}Successfully saved this chest as a receiver chest. Because you used the hoe tool the id was auto generated (${rid}).")
+            }else{
+                if(existingChest.first != null) {
+                    // some ugly chat message :( ...
+                    val m1 = TextComponent("This is already a sender chest! If you want to delete this chest, ")
+                    m1.color = net.md_5.bungee.api.ChatColor.RED
+                    val m2 = TextComponent("click here.")
+                    m2.color = net.md_5.bungee.api.ChatColor.RED
+                    m2.isUnderlined = true
+                    m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${existingChest.first!!.sid}")
+                    val m3 = TextComponent(" Warning! Deleting a sender chest will also delete all its receivers!")
+                    m3.color = net.md_5.bungee.api.ChatColor.RED
+                    m1.addExtra(m2)
+                    m1.addExtra(m3)
+                    player.spigot().sendMessage(m1)
+                }else{
+                    // some ugly chat message :( ...
+                    val m1 = TextComponent("This is already a receiver chest! If you want to delete this chest, ")
+                    m1.color = net.md_5.bungee.api.ChatColor.RED
+                    val m2 = TextComponent("click here.")
+                    m2.color = net.md_5.bungee.api.ChatColor.RED
+                    m2.isUnderlined = true
+                    m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove receiver ${existingChest.second!!.rid}")
+                    m1.addExtra(m2)
+                    player.spigot().sendMessage(m1)
+                }
+            }
+        }else{
+            // some ugly chat message :( ...
+            val m1 = TextComponent("Currently there is no sender chest selected. At first select a sender chest using ")
+            m1.color = net.md_5.bungee.api.ChatColor.YELLOW
+            val m2 = TextComponent("/sorter select sender")
+            m2.isItalic = true
+            m2.color = net.md_5.bungee.api.ChatColor.GRAY
+            m2.isUnderlined = true
+            m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/sorter select sender")
+            val m3 = TextComponent(" and right clicking a sender chest.")
+            m3.color = net.md_5.bungee.api.ChatColor.YELLOW
+            m1.addExtra(m2)
+            m1.addExtra(m3)
+            player.spigot().sendMessage(m1)
+        }
     }
 }
