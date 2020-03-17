@@ -99,15 +99,12 @@ class Listener(private val db: JsonHelper): Listener {
                         // check if no item frame is placed and give hint to user
                         if (block != null) {
                             val map = HashMap<String, Any?>()
+                            map["leftChest"] = leftChest
+                            map["rightChest"] = rightChest
+                            map["block"] = block
                             if(!block.type.isAir) {
-                                map["leftChest"] = leftChest
-                                map["rightChest"] = rightChest
-                                map["block"] = block
                                 realReceiver.add(map)
                             }else{
-                                map["leftChest"] = leftChest
-                                map["rightChest"] = rightChest
-                                map["block"] = null
                                 airReceiver.add(map)
                             }
                         }else{
