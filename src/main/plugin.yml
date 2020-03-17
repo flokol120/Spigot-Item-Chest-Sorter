@@ -1,5 +1,5 @@
 name: "Item-Chest-Sorter"
-version: "1.0"
+version: "1.1"
 load: POSTWORLD
 
 author: "Flo Dörr"
@@ -9,7 +9,7 @@ main: "com.flodoerr.item_chest_sorter.ItemChestSorter"
 commands:
   sorter:
     description: main command
-    usage: "Usage: /sorter [add|select|remove] [sender|receiver]"
+    usage: "Usage: /ics [add|select|remove] [sender|receiver]"
     aliases:
       - item-chest-sorter
       - ics
