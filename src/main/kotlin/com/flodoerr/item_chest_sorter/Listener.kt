@@ -100,7 +100,6 @@ class Listener(private val db: JsonHelper): Listener {
                         if (block != null) {
                             val map = HashMap<String, Any?>()
                             map["leftChest"] = leftChest
-                            map["rightChest"] = rightChest
                             map["block"] = block
                             if(!block.type.isAir) {
                                 realReceiver.add(map)
