@@ -22,12 +22,11 @@ import org.bukkit.util.BoundingBox
 
 var currentSender: Sender? = null
 
-class Listener(private val db: JsonHelper): Listener {
+class Listener(private val db: JsonHelper, private val main: ItemChestSorter): Listener {
 
     @EventHandler
     fun onPlayerInteractEvent(e: PlayerInteractEvent) {
         if(e.item !== null && e.item!!.itemMeta !== null && e.clickedBlock !== null) {
-
             val item = e.item!!
             val itemMeta = item.itemMeta!!
 
@@ -153,8 +152,10 @@ class Listener(private val db: JsonHelper): Listener {
             if(receivers.size > 0) {
                 for (receiver in receivers) {
                     val block = receiver["block"] as ItemStack?
+                    // First check if block == null or the bloc is air, if that is the case we have found an air chest
                     // check if item in chest and item on frame are the same
-                    if(block == null || block.type == content.type) {
+                    // check if we have an item set defined in the config.yml matching the item in the frame and in the sender chest
+                    if((block == null || block.type.isAir) || block.type == content.type || main.isItemInSet(content, block)) {
                         val leftChest = receiver["leftChest"] as Chest
                         // determine whether the chest has enough space to hold the items
                         val spaceResult = checkIfChestHasSpace(content, leftChest)

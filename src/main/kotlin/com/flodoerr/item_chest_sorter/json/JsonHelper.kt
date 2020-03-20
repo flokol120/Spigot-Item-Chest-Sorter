@@ -21,7 +21,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
             jsonFile.writeText(Klaxon().toJsonString(JSON()))
             commandSender?.sendMessage("created json file")
         }
-        doNotTouchFile.writeText("Don't touch the json file, if you don't know what you are doing! Really. Don't do it. There is no configuration needed.")
+        doNotTouchFile.writeText("Don't touch the json file, if you don't know what you are doing! Really. Don't do it. You may edit the config.yml.")
     }
 
     /**

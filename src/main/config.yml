@@ -1,0 +1,18 @@
+# If enabled = false the plugin will not do anything
+enabled: true
+# define sets if you want similar items to be moved to just one chest
+# look at the examples if you want to add a new set.
+# define a new array by beginning the line with - []
+# separate the items by commas.
+# you have to use the so called 'namespaced IDs'. You can find those in the minecraft wiki for almost all items.
+# example nanespaced IDs: https://minecraft.gamepedia.com/Flower#Data_values
+sets:
+# example 1: Move all wool colors to the same chest
+# remove the '#' in the next two lines if you want to move all different colored wool blocks into one chest
+#    - [white_wool, orange_wool, magenta_wool, light_blue_wool, yellow_wool, lime_wool, pink_wool, gray_wool,
+#       light_gray_wool, cyan_wool, purple_wool, blue_wool, brown_wool, green_wool, red_wool, black_wool]
+
+# example 2: Move all flowers to the same chest
+# remove the '#' in the next two lines if you want to move all different flowers into one chest
+#    - [dandelion, poppy, blue_orchid, allium, azure_bluet, red_tulip, orange_tulip, white_tulip, pink_tulip,
+#       exeye_daisy, cornflower, lily_of_the_valley, wither_rose, sunflower, lilac, rose_bush, peony]
