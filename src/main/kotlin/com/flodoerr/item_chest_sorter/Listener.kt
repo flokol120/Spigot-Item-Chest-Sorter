@@ -82,54 +82,70 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                     // loop through all chest slots
                     val receivers = sender.receiver
 
-                    val airReceiver = ArrayList<HashMap<String, Any?>>()
-                    val realReceiver = ArrayList<HashMap<String, Any?>>()
+                    if(receivers.size > 0) {
+                        val airReceiver = ArrayList<HashMap<String, Any?>>()
+                        val realReceiver = ArrayList<HashMap<String, Any?>>()
 
-                    for (receiver in receivers) {
-                        val leftChest = player.world.getBlockAt(cordsToLocation(receiver.cords.left, inventory.location!!.world!!)).state as Chest
-                        // get right chest if cords not null
-                        val rightChest = if(receiver.cords.right != null) {
-                            player.world.getBlockAt(cordsToLocation(receiver.cords.right!!, inventory.location!!.world!!)).state as Chest
-                        }else{
-                            null
-                        }
-                        // get block in item frame on chest
-                        val block = getItemFromItemFrameNearChest(leftChest, rightChest)
-                        // check if no item frame is placed and give hint to user
-                        if (block != null) {
-                            val map = HashMap<String, Any?>()
-                            map["leftChest"] = leftChest
-                            map["block"] = block
-                            if(!block.type.isAir) {
-                                realReceiver.add(map)
+                        for (receiver in receivers) {
+                            val leftChest = player.world.getBlockAt(cordsToLocation(receiver.cords.left, inventory.location!!.world!!)).state as Chest
+                            // get right chest if cords not null
+                            val rightChest = if(receiver.cords.right != null) {
+                                player.world.getBlockAt(cordsToLocation(receiver.cords.right!!, inventory.location!!.world!!)).state as Chest
                             }else{
-                                airReceiver.add(map)
+                                null
                             }
-                        }else{
-                            player.sendMessage("${ChatColor.YELLOW}There is a receiver chest which has no item frame on it. Please but an item frame on a receiver chest, containing the target item/block. You can also leave the item frame empty to accept all items which could not be sorted.")
+                            // get block in item frame on chest
+                            val block = getItemFromItemFrameNearChest(leftChest, rightChest)
+                            // check if no item frame is placed and give hint to user
+                            if (block != null) {
+                                val map = HashMap<String, Any?>()
+                                map["leftChest"] = leftChest
+                                map["block"] = block
+                                if(!block.type.isAir) {
+                                    realReceiver.add(map)
+                                }else{
+                                    airReceiver.add(map)
+                                }
+                            }else{
+                                player.sendMessage("${ChatColor.YELLOW}There is a receiver chest which has no item frame on it. Please but an item frame on a receiver chest, containing the target item/block. You can also leave the item frame empty to accept all items which could not be sorted.")
+                            }
                         }
-                    }
 
-                    // left over items which cannot be sorted in a chest
-                    val leftOverContent = ArrayList<ItemStack>()
+                        // left over items which cannot be sorted in a chest
+                        val leftOverContent = ArrayList<ItemStack>()
 
-                    for (content in contents) {
-                        // get an itemstack if item cannot be sorted
-                        val stack = handleItems(content, player, inventory, realReceiver)
-                        if (stack != null) {
-                            // add this stack to the leftOverContent List
-                            leftOverContent.add(stack)
+                        for (content in contents) {
+                            // get an itemstack if item cannot be sorted
+                            val stack = handleItems(content, player, inventory, realReceiver)
+                            if (stack != null) {
+                                // add this stack to the leftOverContent List
+                                leftOverContent.add(stack)
+                            }
                         }
-                    }
 
-                    // if there are items which could not be sorted
-                    if(leftOverContent.size > 0) {
-                        // send a message to the player
-                        player.sendMessage("${ChatColor.YELLOW}Found item(s) which are/is not specified. Sorting into air chest, if there is enough space...")
-                        // sort items into "air chests"
-                        for (leftOver in leftOverContent) {
-                            handleItems(leftOver, player, inventory, airReceiver)
+                        // if there are items which could not be sorted and there is at least one air chest (#1)
+                        if(leftOverContent.size > 0 && airReceiver.size > 0) {
+                            // send a message to the player
+                            player.sendMessage("${ChatColor.YELLOW}Found item(s) which are/is not specified. Sorting into air chest, if there is enough space...")
+                            // sort items into "air chests"
+                            for (leftOver in leftOverContent) {
+                                handleItems(leftOver, player, inventory, airReceiver)
+                            }
                         }
+                    }else {
+                        // some ugly chat message :( ...
+                        val m1 = TextComponent("There are no receivers configured yet. Use the ")
+                        m1.color = net.md_5.bungee.api.ChatColor.YELLOW
+                        val m2 = TextComponent("/ics add receiver ")
+                        m2.isItalic = true
+                        m2.color = net.md_5.bungee.api.ChatColor.GRAY
+                        m2.isUnderlined = true
+                        m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics add receiver")
+                        val m3 = TextComponent("command.")
+                        m3.color = net.md_5.bungee.api.ChatColor.YELLOW
+                        m1.addExtra(m2)
+                        m1.addExtra(m3)
+                        player.spigot().sendMessage(m1)
                     }
                 }
             }
@@ -149,61 +165,44 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
     private fun handleItems(content: ItemStack?, player: HumanEntity, inventory: Inventory, receivers: ArrayList<HashMap<String, Any?>>): ItemStack? {
         var notFound: ItemStack? = null
         if(content != null && content.amount > 0 && !content.type.isAir) {
-            if(receivers.size > 0) {
-                for (receiver in receivers) {
-                    val block = receiver["block"] as ItemStack?
-                    // First check if block == null or the bloc is air, if that is the case we have found an air chest
-                    // check if item in chest and item on frame are the same
-                    // check if we have an item set defined in the config.yml matching the item in the frame and in the sender chest
-                    if((block == null || block.type.isAir) || block.type == content.type || main.isItemInSet(content, block)) {
-                        val leftChest = receiver["leftChest"] as Chest
-                        // determine whether the chest has enough space to hold the items
-                        val spaceResult = checkIfChestHasSpace(content, leftChest)
-                        // if the spaceResult and the amount of items are the same, the chest is full with no space
-                        // to put a single item. continue to find the next chest, if present.
-                        if(spaceResult == content.amount) {
-                            continue
-                        }
-                        // only put the amount of items in the receiver chest it can hold
-                        if (spaceResult > 0) {
-                            content.amount -= spaceResult
-                            player.sendMessage("${ChatColor.DARK_GREEN}A chest is about to be full. ${ChatColor.YELLOW}$spaceResult${ChatColor.DARK_GREEN} items will be left over if no other chest with this item is defined.")
-                        }
-
-                        // move the items
-                        moveItem(content, leftChest, player, inventory)
-
-                        // if there were leftover items: add leftover items to sender chest and continue to find the next chest, if present.
-                        if(spaceResult > 0) {
-                            content.amount = spaceResult
-                            inventory.addItem(content)
-                            continue
-                        }else{
-                            // if all items fitted in the chest: No need to search for another, breaking...
-                            // also there was a chest found for the items, resetting notFound...
-                            notFound = null
-                            break
-                        }
-                    }else{
-                        // so far no chest was found containing this item, remember it by assigning it to notFound
-                        notFound = content
+            for (receiver in receivers) {
+                val block = receiver["block"] as ItemStack?
+                // First check if block == null or the bloc is air, if that is the case we have found an air chest
+                // check if item in chest and item on frame are the same
+                // check if we have an item set defined in the config.yml matching the item in the frame and in the sender chest
+                if((block == null || block.type.isAir) || block.type == content.type || main.isItemInSet(content, block)) {
+                    val leftChest = receiver["leftChest"] as Chest
+                    // determine whether the chest has enough space to hold the items
+                    val spaceResult = checkIfChestHasSpace(content, leftChest)
+                    // if the spaceResult and the amount of items are the same, the chest is full with no space
+                    // to put a single item. continue to find the next chest, if present.
+                    if(spaceResult == content.amount) {
+                        continue
                     }
+                    // only put the amount of items in the receiver chest it can hold
+                    if (spaceResult > 0) {
+                        content.amount -= spaceResult
+                        player.sendMessage("${ChatColor.DARK_GREEN}A chest is about to be full. ${ChatColor.YELLOW}$spaceResult${ChatColor.DARK_GREEN} items will be left over if no other chest with this item is defined.")
+                    }
+
+                    // move the items
+                    moveItem(content, leftChest, player, inventory)
+
+                    // if there were leftover items: add leftover items to sender chest and continue to find the next chest, if present.
+                    if(spaceResult > 0) {
+                        content.amount = spaceResult
+                        inventory.addItem(content)
+                        continue
+                    }else{
+                        // if all items fitted in the chest: No need to search for another, breaking...
+                        // also there was a chest found for the items, resetting notFound...
+                        notFound = null
+                        break
+                    }
+                }else{
+                    // so far no chest was found containing this item, remember it by assigning it to notFound
+                    notFound = content
                 }
-            }else{
-                // some ugly chat message :( ...
-                val m1 = TextComponent("There are no receivers configured yet. Use the ")
-                m1.color = net.md_5.bungee.api.ChatColor.YELLOW
-                player.spigot().sendMessage(m1)
-                val m2 = TextComponent("/ics add receiver ")
-                m2.isItalic = true
-                m2.color = net.md_5.bungee.api.ChatColor.GRAY
-                m2.isUnderlined = true
-                m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics add receiver")
-                val m3 = TextComponent("command.")
-                m3.color = net.md_5.bungee.api.ChatColor.YELLOW
-                m1.addExtra(m2)
-                m1.addExtra(m3)
-                player.spigot().sendMessage(m1)
             }
         }
         // return notFound can be null or an itemstack
