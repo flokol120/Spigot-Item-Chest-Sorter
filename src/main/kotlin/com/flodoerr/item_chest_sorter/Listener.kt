@@ -114,13 +114,18 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         // left over items which cannot be sorted in a chest
                         val leftOverContent = ArrayList<ItemStack>()
 
-                        for (content in contents) {
-                            // get an itemstack if item cannot be sorted
-                            val stack = handleItems(content, player, inventory, realReceiver)
-                            if (stack != null) {
-                                // add this stack to the leftOverContent List
-                                leftOverContent.add(stack)
+                        if(realReceiver.size > 0) {
+                            for (content in contents) {
+                                // get an itemstack if item cannot be sorted
+                                val stack = handleItems(content, player, inventory, realReceiver)
+                                if (stack != null) {
+                                    // add this stack to the leftOverContent List
+                                    leftOverContent.add(stack)
+                                }
                             }
+                        }else{
+                            // add all items the leftOverContent if there are no realReceivers
+                            leftOverContent.addAll(contents)
                         }
 
                         // if there are items which could not be sorted and there is at least one air chest (#1)
