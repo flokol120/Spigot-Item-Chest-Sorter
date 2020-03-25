@@ -9,7 +9,8 @@ import java.nio.file.Paths
 class ItemChestSorter: JavaPlugin() {
 
     private lateinit var db: JsonHelper
-
+    private var setsRegex = ArrayList<ArrayList<Regex>>()
+    
     override fun onEnable() {
         super.onEnable()
 
@@ -95,11 +96,29 @@ class ItemChestSorter: JavaPlugin() {
      */
     fun isItemInSet(itemInChest: ItemStack, itemInItemFrame: ItemStack): Boolean {
         val sets = getSets()
-        for (set in sets) {
-            if(set.contains(itemInChest.type.key.key) && set.contains(itemInItemFrame.type.key.key)) {
-                return true
+
+        if(this.config.getBoolean("enableSetsRegex", false)) {
+            if(setsRegex.count() == 0){
+                // Keeps regex in buffer
+                setsRegex = ArrayList(sets.map {
+                    set -> ArrayList(set.map {
+                        p -> p.toRegex(RegexOption.IGNORE_CASE)
+                    })
+                })
+            }
+            // returns the matching set
+            return setsRegex.any { s ->
+                (s.any { p -> p.containsMatchIn(itemInChest.type.key.key) }
+                && s.any { p -> p.containsMatchIn(itemInItemFrame.type.key.key) })
+            }
+        }else{
+            for (set in sets) {
+                if(set.contains(itemInChest.type.key.key) && set.contains(itemInItemFrame.type.key.key)) {
+                    return true
+                }
             }
         }
+
         return false
     }
 }

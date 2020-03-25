@@ -6,6 +6,10 @@ enabled: true
 # move items when they are moved into a sender chest by a hopper. This feature could be not safe to use! Enable with caution.
 sendFromHopper: false
 
+# allows the use of Regular Expressions in sets
+# example: '.*_log' to match all things that end with "_log"
+enableSetsRegex: false
+
 # define sets if you want similar items to be moved to just one chest
 # look at the examples if you want to add a new set.
 # define a new array by beginning the line with - []
