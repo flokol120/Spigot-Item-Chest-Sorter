@@ -97,7 +97,7 @@ class ItemChestSorter: JavaPlugin() {
     fun isItemInSet(itemInChest: ItemStack, itemInItemFrame: ItemStack): Boolean {
         val sets = getSets()
 
-        if(this.config.getBoolean("enabled") == true) {
+        if(this.config.getBoolean("enableSetsRegex") == true) {
             if(setsRegex.count() == 0){
                 // Keeps regex in buffer
                 setsRegex = ArrayList(sets.map {
