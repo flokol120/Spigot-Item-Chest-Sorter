@@ -1,5 +1,11 @@
+# Version 1.3.0
+
 # If enabled = false the plugin will not do anything
 enabled: true
+
+# move items when they are moved into a sender chest by a hopper. This feature could be not safe to use! Enable with caution.
+sendFromHopper: false
+
 # define sets if you want similar items to be moved to just one chest
 # look at the examples if you want to add a new set.
 # define a new array by beginning the line with - []

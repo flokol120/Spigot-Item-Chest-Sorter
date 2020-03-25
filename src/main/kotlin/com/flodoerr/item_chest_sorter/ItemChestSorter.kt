@@ -1,7 +1,6 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
-import org.bukkit.entity.Item
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.StringUtil
