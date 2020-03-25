@@ -95,17 +95,23 @@ class ItemChestSorter: JavaPlugin() {
      * @author Flo Dörr
      */
     fun isItemInSet(itemInChest: ItemStack, itemInItemFrame: ItemStack): Boolean {
-        val sets = getSets()        
+        val sets = getSets()
+
         if(this.config.getBoolean("enabled") == true) {
             if(setsRegex.count() == 0){
                 // Keeps regex in buffer
-                setsRegex = ArrayList(sets.map { set -> ArrayList(set.map { p -> p.toRegex(RegexOption.IGNORE_CASE)})})
+                setsRegex = ArrayList(sets.map {
+                    set -> ArrayList(set.map {
+                        p -> p.toRegex(RegexOption.IGNORE_CASE)
+                    })
+                })
             }
             // returns the matching set
-            var match = setsRegex.firstOrNull { s -> 
-                (s.any { p -> p.containsMatchIn(itemInChest.type.key.key) } 
+            var match = setsRegex.firstOrNull { s ->
+                (s.any { p -> p.containsMatchIn(itemInChest.type.key.key) }
                 && s.any { p -> p.containsMatchIn(itemInItemFrame.type.key.key) })
             }
+
             return match != null;
         }else{
             for (set in sets) {
@@ -114,7 +120,7 @@ class ItemChestSorter: JavaPlugin() {
                 }
             }
         }
-        
+
         return false
     }
 }
