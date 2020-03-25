@@ -107,12 +107,12 @@ class ItemChestSorter: JavaPlugin() {
                 })
             }
             // returns the matching set
-            var match = setsRegex.firstOrNull { s ->
+            val match = setsRegex.firstOrNull { s ->
                 (s.any { p -> p.containsMatchIn(itemInChest.type.key.key) }
                 && s.any { p -> p.containsMatchIn(itemInItemFrame.type.key.key) })
             }
 
-            return match != null;
+            return match != null
         }else{
             for (set in sets) {
                 if(set.contains(itemInChest.type.key.key) && set.contains(itemInItemFrame.type.key.key)) {
