@@ -13,7 +13,6 @@ import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import kotlin.math.log
 
 class Commands(private val db: JsonHelper): CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {

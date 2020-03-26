@@ -93,6 +93,7 @@ class ItemChestSorter: JavaPlugin() {
      * @return true if both items are in one set
      *
      * @author Flo Dörr
+     * @author corylulu
      */
     fun isItemInSet(itemInChest: ItemStack, itemInItemFrame: ItemStack): Boolean {
         val sets = getSets()

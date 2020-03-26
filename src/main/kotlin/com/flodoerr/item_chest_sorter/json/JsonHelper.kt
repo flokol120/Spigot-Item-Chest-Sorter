@@ -1,7 +1,6 @@
 package com.flodoerr.item_chest_sorter.json
 
 import com.beust.klaxon.Klaxon
-import com.google.gson.JsonNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.bukkit.command.ConsoleCommandSender
