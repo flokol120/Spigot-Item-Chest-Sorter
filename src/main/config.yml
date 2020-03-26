@@ -23,7 +23,7 @@ sets:
 #  light_gray_wool, cyan_wool, purple_wool, blue_wool, brown_wool, green_wool, red_wool, black_wool]
 
 # example 1.2: Move all wool colors to the same chest (using regex)
-# remove the '#' in the next two lines if you want to move all different colored wool blocks into one chest
+# remove the '#' in the next line if you want to move all different colored wool blocks into one chest
 #  - ['.*_wool']
 
 # example 2: Move all flowers to the same chest
