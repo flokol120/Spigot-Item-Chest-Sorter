@@ -109,8 +109,8 @@ class ItemChestSorter: JavaPlugin() {
             }
             // returns the matching set
             return setsRegex.any { s ->
-                (s.any { p -> p.containsMatchIn(itemInChest.type.key.key) }
-                && s.any { p -> p.containsMatchIn(itemInItemFrame.type.key.key) })
+                (s.any { p -> p.matches(itemInChest.type.key.key) }
+                && s.any { p -> p.matches(itemInItemFrame.type.key.key) })
             }
         }else{
             for (set in sets) {
