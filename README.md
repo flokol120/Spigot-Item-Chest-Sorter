@@ -3,7 +3,7 @@ A spigot minecraft plugin to sort your messy items into separate chests
 
 ## How can I build a jar using IntelliJ idea which I can use on my server?
 ### 1. Setup an artifact
-1. Open the Project Structure using File --> Project Structure (or STRG + ALT + SHIGT + S)
+1. Open the Project Structure using File --> Project Structure (or STRG + ALT + SHIFT + S)
 2. Navigate to Arifacts
 3. Add a new artifact using the '+' symbol
 4. Select JAR --> From modules with dependencies...
