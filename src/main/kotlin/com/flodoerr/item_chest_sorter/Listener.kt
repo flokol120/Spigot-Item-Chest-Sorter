@@ -6,9 +6,11 @@ import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.ChatColor
 import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
 import org.bukkit.block.Chest
+import org.bukkit.block.Container
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.HumanEntity
 import org.bukkit.entity.ItemFrame
@@ -49,7 +51,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
 
                 val block = e.clickedBlock!!
 
-                val isChest = block.blockData is org.bukkit.block.data.type.Chest
+                val isChest = block.blockData is org.bukkit.block.data.type.Chest || block.type == Material.BARREL
 
                 if(isChest) {
                     if(fireLevel == 65535 && displayName == SENDER_HOE_NAME) {
@@ -75,7 +77,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
 
     @EventHandler
     fun onInventoryMoveItemEvent(e: InventoryMoveItemEvent) {
-        if(main.config.getBoolean("sendFromHopper")) {
+        if(main.config.getBoolean("sendFromHopper", false)) {
             runBlocking {
                 if(e.destination.type == InventoryType.CHEST && e.source.type == InventoryType.HOPPER) {
                     checkInventory(e.destination, null, e.item)
@@ -122,11 +124,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         val world = player?.world ?: inventory.location!!.world!!
 
                         for (receiver in receivers) {
-                            val leftChest = world.getBlockAt(cordsToLocation(receiver.cords.left, world)).state as Chest
+                            val leftChest = world.getBlockAt(cordsToLocation(receiver.cords.left, world)).state as Container
                             // get right chest if cords not null
                             val rightChest = if(receiver.cords.right != null) {
                                 inventory.location!!.world
-                                world.getBlockAt(cordsToLocation(receiver.cords.right!!, world)).state as Chest
+                                world.getBlockAt(cordsToLocation(receiver.cords.right!!, world)).state as Container
                             }else{
                                 null
                             }
@@ -244,7 +246,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 // check if item in chest and item on frame are the same
                 // check if we have an item set defined in the config.yml matching the item in the frame and in the sender chest
                 if((block == null || block.type.isAir) || block.type == content.type || main.isItemInSet(content, block)) {
-                    val leftChest = receiver["leftChest"] as Chest
+                    val leftChest = receiver["leftChest"] as Container
                     // determine whether the chest has enough space to hold the items
                     val spaceResult = checkIfChestHasSpace(content, leftChest)
                     // if the spaceResult and the amount of items are the same, the chest is full with no space
@@ -296,7 +298,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      *
      * @author Flo Dörr
      */
-    private fun moveItem(content: ItemStack, leftChest: Chest, player: HumanEntity?, inventory: Inventory, workaround: Boolean = false) {
+    private fun moveItem(content: ItemStack, leftChest: Container, player: HumanEntity?, inventory: Inventory, workaround: Boolean = false) {
         // got some weird bugs with the amount... defining this var actually helped :thinking:
         val amount = content.amount
         // add to (left) chest. Do not use blockInventory as its only the leftChests inventory
@@ -318,13 +320,21 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             moving = false
             timer?.cancel()
             timer?.purge()
-            val inv = inventory.location!!.world!!.getBlockAt(inventory.location!!).state as Chest
+            val inv = inventory.location!!.world!!.getBlockAt(inventory.location!!).state as Container
             timer = Timer("Workaround")
             timer!!.schedule(500) {
                 if(!moving) {
-                    for (item in inv.blockInventory) {
-                        if(content.isSimilar(item)){
-                            inv.blockInventory.removeItem(content)
+                    if(inv is Chest) {
+                        for (item in inv.blockInventory) {
+                            if (content.isSimilar(item)) {
+                                inv.blockInventory.removeItem(content)
+                            }
+                        }
+                    } else {
+                        for (item in inv.inventory) {
+                            if (content.isSimilar(item)) {
+                                inv.inventory.removeItem(content)
+                            }
                         }
                     }
                     cancel()
@@ -361,7 +371,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      *
      * @author Flo Dörr
      */
-    private fun checkIfChestHasSpace(item: ItemStack, chest: Chest): Int {
+    private fun checkIfChestHasSpace(item: ItemStack, chest: Container): Int {
         var count = item.amount
         for (stack in chest.inventory.contents) {
             if(stack == null) {
@@ -379,7 +389,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      * @param rightChest right chest of a double chest. If this is no double chest. right chest is null
      * @return ItemStack with the item in the item frame. Can be null if no item frame can be found
      */
-    private fun getItemFromItemFrameNearChest(leftChest: Chest, rightChest: Chest?): ItemStack? {
+    private fun getItemFromItemFrameNearChest(leftChest: Container, rightChest: Container?): ItemStack? {
         // get BoundingBox of chest and expand it by .1 to find the item frame
         val box = BoundingBox.of(leftChest.block)
         box.expand(.1)
@@ -463,7 +473,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             message.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${existingSender.sid}")
             player.spigot().sendMessage(message)
         }else{
-            val chestLocation = getChestLocation((block.state as Chest).inventory)
+            val chestLocation = getChestLocation((block.state as Container).inventory)
             var sid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~sender"
             sid += if(chestLocation.right != null) {
                 "~double~chest"
@@ -489,7 +499,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      */
     private suspend fun handleReceiverHoe(player: Player, block: Block) {
         if(currentSender != null) {
-            val chestLocation = getChestLocation((block.state as Chest).inventory)
+            val chestLocation = getChestLocation((block.state as Container).inventory)
             val existingChest = db.getSavedChestFromCords(chestLocation.left)
             if(existingChest == null) {
                 var rid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~receiver"
