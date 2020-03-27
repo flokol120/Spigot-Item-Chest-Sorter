@@ -12,6 +12,8 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
     private val jsonFile = Paths.get(dataFolder.absolutePath, "chests.json").toFile()
     private val doNotTouchFile = Paths.get(dataFolder.absolutePath, "README (don't touch the json file if you don't know what you are doing)").toFile()
 
+    private var cachedJSON: JSON? = null
+
     init {
         if(!dataFolder.exists()){
             dataFolder.mkdir()
@@ -233,15 +235,17 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
     }
 
     /**
-     * reads the json from disk
+     * reads the json from disk if not already cached
      * @return JSON object
      *
      * @author Flo Dörr
      */
     private suspend fun getJSON(): JSON {
-        return withContext(Dispatchers.IO) {
-            return@withContext Klaxon().parse<JSON>(jsonFile.readText())!!
-        }
+        return cachedJSON
+            ?: withContext(Dispatchers.IO) {
+                cachedJSON = Klaxon().parse<JSON>(jsonFile.readText())!!
+                return@withContext cachedJSON!!
+            }
     }
 
     /**
@@ -258,6 +262,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
                     json
                 )
             )
+            cachedJSON = json
             return@withContext true
         }
     }

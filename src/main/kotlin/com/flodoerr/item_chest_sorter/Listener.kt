@@ -16,9 +16,9 @@ import org.bukkit.entity.HumanEntity
 import org.bukkit.entity.ItemFrame
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryCloseEvent
-import org.bukkit.event.inventory.InventoryInteractEvent
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerInteractEvent
@@ -31,14 +31,13 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.concurrent.schedule
 
-
-var currentSender: Sender? = null
-
 class Listener(private val db: JsonHelper, private val main: ItemChestSorter): Listener {
 
-    @EventHandler
+    private var currentSender: Sender? = null
+
+    @EventHandler(priority = EventPriority.LOWEST)
     fun onPlayerInteractEvent(e: PlayerInteractEvent) {
-        if(e.item !== null && e.item!!.itemMeta !== null && e.clickedBlock !== null) {
+        if(e.item != null && e.item!!.itemMeta != null && e.clickedBlock != null && e.item?.type == Material.WOODEN_HOE) {
             val item = e.item!!
             val itemMeta = item.itemMeta!!
 
@@ -68,28 +67,19 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     fun onInventoryCloseEvent(e: InventoryCloseEvent) {
         runBlocking {
             checkInventory(e.inventory, e.player)
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     fun onInventoryMoveItemEvent(e: InventoryMoveItemEvent) {
-        if(main.config.getBoolean("sendFromHopper", false)) {
-            runBlocking {
-                if(e.destination.type == InventoryType.CHEST && e.source.type == InventoryType.HOPPER) {
-                    checkInventory(e.destination, null, e.item)
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    fun onInventoryClickEvent(e: InventoryInteractEvent) {
         runBlocking {
-            checkInventory(e.inventory, e.whoClicked)
+            if(e.destination.type == InventoryType.CHEST && e.source.type == InventoryType.HOPPER) {
+                checkInventory(e.destination, null, e.item)
+            }
         }
     }
 
@@ -105,11 +95,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      * @author Flo Dörr
      */
     private suspend fun checkInventory(inventory: Inventory, player: HumanEntity? = null, itemStack: ItemStack? = null) {
-        if(inventory.location !== null) {
+        if(inventory.location != null) {
             // get the sender by the inventory location
             val sender = db.getSenderByCords(locationToCords(inventory.location!!))
             // if null chest is no sender chest
-            if(sender !== null) {
+            if(sender != null) {
                 moving = true
                 // get items in chest
                 val contents: Array<ItemStack?> = inventory.contents
