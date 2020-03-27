@@ -1,6 +1,8 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
+import org.bukkit.event.HandlerList
+import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.StringUtil
@@ -19,26 +21,9 @@ class ItemChestSorter: JavaPlugin() {
         if(this.config.getBoolean("enabled")) {
             db = JsonHelper(dataFolder, server.consoleSender)
 
-            // register commands
-            getCommand(BASE_COMMAND)!!.setExecutor(Commands(db))
+            registerCommands()
 
-            // register tab completer
-            getCommand(BASE_COMMAND)!!.setTabCompleter { _, _, _, args ->
-                val completions = ArrayList<String>()
-                if(args.size == 1){
-                    StringUtil.copyPartialMatches(args[0], COMMANDS[0], completions)
-                }else if(args.size == 2) {
-                    if(args[0].toLowerCase() == COMMANDS[0][2]) {
-                        return@setTabCompleter listOf(COMMANDS[1][1])
-                    }else{
-                        StringUtil.copyPartialMatches(args[1], COMMANDS[1], completions)
-                    }
-                }
-                return@setTabCompleter completions
-            }
-
-            //register listener
-            server.pluginManager.registerEvents(Listener(db, this), this)
+            registerListener()
 
             server.consoleSender.sendMessage("Item-Chest-Sorter loaded.")
         }else{
@@ -53,8 +38,48 @@ class ItemChestSorter: JavaPlugin() {
     }
 
     override fun onDisable() {
+        HandlerList.unregisterAll(this)
         server.consoleSender.sendMessage("Item-Chest-Sorter is going to stop...")
         super.onDisable()
+    }
+
+    /**
+     * registers listener
+     *
+     * @author Flo Dörr
+     */
+    private fun registerListener() {
+        //register listener
+        server.pluginManager.registerEvents(Listener(db, this), this)
+        // unregister event if so configured
+        if(!config.getBoolean("sendFromHopper")) {
+            InventoryMoveItemEvent.getHandlerList().unregister(this)
+        }
+    }
+
+    /**
+     * registers commands and auto completion
+     *
+     * @author Flo Dörr
+     */
+    private fun registerCommands() {
+        // register commands
+        getCommand(BASE_COMMAND)!!.setExecutor(Commands(db))
+
+        // register tab completer
+        getCommand(BASE_COMMAND)!!.setTabCompleter { _, _, _, args ->
+            val completions = ArrayList<String>()
+            if(args.size == 1){
+                StringUtil.copyPartialMatches(args[0], COMMANDS[0], completions)
+            }else if(args.size == 2) {
+                if(args[0].toLowerCase() == COMMANDS[0][2]) {
+                    return@setTabCompleter listOf(COMMANDS[1][1])
+                }else{
+                    StringUtil.copyPartialMatches(args[1], COMMANDS[1], completions)
+                }
+            }
+            return@setTabCompleter completions
+        }
     }
 
     /**
