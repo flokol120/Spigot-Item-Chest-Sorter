@@ -558,19 +558,26 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 }
             }
         }else{
-            // some ugly chat message :( ...
-            val m1 = TextComponent("Currently there is no sender chest selected. At first select a sender chest using ")
-            m1.color = net.md_5.bungee.api.ChatColor.YELLOW
-            val m2 = TextComponent("/sorter select sender")
-            m2.isItalic = true
-            m2.color = net.md_5.bungee.api.ChatColor.GRAY
-            m2.isUnderlined = true
-            m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/sorter select sender")
-            val m3 = TextComponent(" and right clicking a sender chest.")
-            m3.color = net.md_5.bungee.api.ChatColor.YELLOW
-            m1.addExtra(m2)
-            m1.addExtra(m3)
-            player.spigot().sendMessage(m1)
+            val sender = db.getSender()
+            if(sender.size == 1) {
+                currentSender = sender[0]
+                player.sendMessage("${ChatColor.YELLOW}No sender was selected. Since there is only one sender configured yet, this sender was selected automatically")
+                handleReceiverHoe(player, block)
+            }else{
+                // some ugly chat message :( ...
+                val m1 = TextComponent("Currently there is no sender chest selected. At first select a sender chest using ")
+                m1.color = net.md_5.bungee.api.ChatColor.YELLOW
+                val m2 = TextComponent("/sorter select sender")
+                m2.isItalic = true
+                m2.color = net.md_5.bungee.api.ChatColor.GRAY
+                m2.isUnderlined = true
+                m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/sorter select sender")
+                val m3 = TextComponent(" and right clicking a sender chest.")
+                m3.color = net.md_5.bungee.api.ChatColor.YELLOW
+                m1.addExtra(m2)
+                m1.addExtra(m3)
+                player.spigot().sendMessage(m1)
+            }
         }
     }
 }
