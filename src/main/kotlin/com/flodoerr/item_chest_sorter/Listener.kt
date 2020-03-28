@@ -1,14 +1,12 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.animation.animateItem
+import com.flodoerr.item_chest_sorter.animation.animating
 import com.flodoerr.item_chest_sorter.json.*
 import kotlinx.coroutines.runBlocking
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.TextComponent
-import org.bukkit.ChatColor
-import org.bukkit.Location
-import org.bukkit.Material
-import org.bukkit.World
+import org.bukkit.*
 import org.bukkit.block.Block
 import org.bukkit.block.Chest
 import org.bukkit.block.Container
@@ -112,6 +110,20 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         val airReceiver = ArrayList<HashMap<String, Any?>>()
                         val realReceiver = ArrayList<HashMap<String, Any?>>()
 
+                        // overwriting the animate all setting if too many items are about to be sent, as this can
+                        // potentially crash the server!!
+                        val overwriteAnimation = if(main.config.getBoolean("animation.animateAll", false)) {
+                            var items = 0
+                            for (content in contents){
+                                if (content != null && !content.type.isAir) {
+                                    items += content.amount
+                                }
+                            }
+                            items >= (64 * 2)
+                        }else{
+                            false
+                        }
+
                         val world = player?.world ?: inventory.location!!.world!!
 
                         for (receiver in receivers) {
@@ -152,14 +164,14 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                             if(itemStack == null) {
                                 for (content in contents) {
                                     // get an itemstack if item cannot be sorted
-                                    val stack = handleItems(content, player, inventory, realReceiver, false)
+                                    val stack = handleItems(content, player, inventory, realReceiver, false, overwriteAnimation)
                                     if (stack != null) {
                                         // add this stack to the leftOverContent List
                                         leftOverContent.add(stack)
                                     }
                                 }
                             }else{
-                                val stack = handleItems(itemStack, player, inventory, realReceiver, true)
+                                val stack = handleItems(itemStack, player, inventory, realReceiver, true, overwriteAnimation)
                                 if (stack != null) {
                                     // add this stack to the leftOverContent List
                                     leftOverContent.add(stack)
@@ -180,7 +192,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                             for (leftOver in leftOverContent) {
                                 if(leftOver != null && !leftOver.type.isAir) {
                                     sendMessage = true
-                                    handleItems(leftOver, player, inventory, airReceiver, itemStack != null)
+                                    handleItems(leftOver, player, inventory, airReceiver, itemStack != null, overwriteAnimation)
                                 }
                             }
                             if(sendMessage) {
@@ -228,7 +240,8 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      *
      * @author Flo Dörr
      */
-    private fun handleItems(content: ItemStack?, player: HumanEntity?, inventory: Inventory, receivers: ArrayList<HashMap<String, Any?>>, workaround: Boolean = false): ItemStack? {
+    private fun handleItems(content: ItemStack?, player: HumanEntity?, inventory: Inventory,
+                            receivers: ArrayList<HashMap<String, Any?>>, workaround: Boolean = false, overwriteAnimation: Boolean): ItemStack? {
         var notFound: ItemStack? = null
         if(content != null && content.amount > 0 && !content.type.isAir) {
             for (receiver in receivers) {
@@ -256,7 +269,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         }
                     }
                     // move the items
-                    moveItem(content, leftChest, player, inventory, workaround)
+                    moveItem(content, leftChest, player, inventory, workaround, overwriteAnimation)
 
                     // if there were leftover items: add leftover items to sender chest and continue to find the next chest, if present.
                     if(spaceResult > 0) {
@@ -289,7 +302,8 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      *
      * @author Flo Dörr
      */
-    private fun moveItem(content: ItemStack, leftChest: Container, player: HumanEntity?, inventory: Inventory, workaround: Boolean = false) {
+    private fun moveItem(content: ItemStack, leftChest: Container, player: HumanEntity?,
+                         inventory: Inventory, workaround: Boolean = false, overwriteAnimation: Boolean) {
         // got some weird bugs with the amount... defining this var actually helped :thinking:
         val amount = content.amount
         // add to (left) chest. Do not use blockInventory as its only the leftChests inventory
@@ -305,9 +319,16 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         //remove the item from the sender chest
         inventory.removeItem(content)
 
+        // calling InventoryMoveItemEvent as this behavior is very similar to vanilla hoppers, just remote
+        Bukkit.getServer().pluginManager.callEvent(InventoryMoveItemEvent(inventory, content, leftChest.inventory, true))
+
         if(main.config.getBoolean("animation.enabled", false)) {
             val animationAmount = if(main.config.getBoolean("animation.animateAll", false)){
-                amount
+                if(overwriteAnimation || animating) {
+                    1
+                }else{
+                    amount
+                }
             }else{
                 1
             }

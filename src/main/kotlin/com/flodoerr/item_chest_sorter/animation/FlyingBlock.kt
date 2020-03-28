@@ -7,6 +7,8 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
+import java.lang.IndexOutOfBoundsException
+
 
 /**
  * animates an item from the sender chest to the target chest
@@ -19,6 +21,9 @@ import org.bukkit.util.Vector
  *
  * @author Flo Dörr (who does not like vectors at all)
  */
+// preventing to do too much animations
+var animating = false
+
 fun animateItem(item: ItemStack, start: Location, target: Location, plugin: JavaPlugin, count: Int) {
     for (i in 0.until(count)) {
         val armorLocation = start.clone()
@@ -64,6 +69,7 @@ fun animateItem(item: ItemStack, start: Location, target: Location, plugin: Java
         val distance = directionalVector.length()
 
         // launch the animation asynchronously
+        @Suppress("DEPRECATION")
         val animate = Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, FlyingBlock(stand, slowVector, period), delay.toLong(), period)
 
         // get the animation duration this is the distance divided by the length of the "slower" normalized directional vector
@@ -75,19 +81,24 @@ fun animateItem(item: ItemStack, start: Location, target: Location, plugin: Java
             override fun run() {
                 Bukkit.getScheduler().cancelTask(animate)
                 stand.remove()
+                animating = false
             }
-        }.runTaskLater(plugin, duration.toLong() + delay.toLong())
+        }.runTaskLaterAsynchronously(plugin, duration.toLong() + delay.toLong())
     }
 }
+
 
 class FlyingBlock(private val stand: ArmorStand, private val normalizedVector: Vector, private val period: Long): BukkitRunnable() {
 
     override fun run() {
+        animating = true
         // calculate the addition to be made. Also taking the period into account (to keep the speed the same)
         val addition = normalizedVector.clone().multiply(period.toInt())
         // get the new location by adding the addition to the current ArmorStand location
         val newLocation = stand.location.add(addition)
         // teleport to the new location
-        stand.teleport(newLocation)
+        try {
+            stand.teleport(newLocation)
+        }catch (e: IndexOutOfBoundsException){ }
     }
 }
