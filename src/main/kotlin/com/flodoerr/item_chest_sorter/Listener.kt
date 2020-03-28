@@ -32,7 +32,7 @@ import kotlin.concurrent.schedule
 
 class Listener(private val db: JsonHelper, private val main: ItemChestSorter): Listener {
 
-    private var currentSender: Sender? = null
+    private var currentSender: HashMap<String, String> = HashMap()
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onPlayerInteractEvent(e: PlayerInteractEvent) {
@@ -485,7 +485,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
     private suspend fun handleSenderHoe(player: Player, block: Block) {
         val existingSender = db.getSenderByCords(locationToCords(block.location))
         if(existingSender != null) {
-            currentSender = existingSender
+            currentSender[player.uniqueId.toString()] = existingSender.sid
             player.sendMessage("${ChatColor.GREEN}Sender chest with id '${existingSender.sid}' is now selected")
             player.inventory.setItemInMainHand(null)
             player.sendMessage("${ChatColor.YELLOW}If you want to remove this chest instead, please click on the next message in the chat (!This also implies the deletion of the receiver chests!):")
@@ -504,7 +504,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 "~chest"
             }
             val sender = Sender(sid, "Sender", chestLocation)
-            currentSender = sender
+            currentSender[player.uniqueId.toString()] = sender.sid
             db.addSender(sender)
 
             player.inventory.setItemInMainHand(null)
@@ -521,7 +521,9 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      * @author Flo Dörr
      */
     private suspend fun handleReceiverHoe(player: Player, block: Block) {
-        if(currentSender != null) {
+        print(player.uniqueId.toString())
+        print(currentSender)
+        if(currentSender[player.uniqueId.toString()] != null) {
             val chestLocation = getChestLocation((block.state as Container).inventory)
             val existingChest = db.getSavedChestFromCords(chestLocation.left)
             if(existingChest == null) {
@@ -531,7 +533,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 }else{
                     "~chest"
                 }
-                db.addReceiverToSender(Receiver(rid, chestLocation), currentSender!!)
+                db.addReceiverToSender(Receiver(rid, chestLocation), currentSender[player.uniqueId.toString()]!!)
                 player.sendMessage("${ChatColor.GREEN}Successfully saved this chest as a receiver chest. Because you used the hoe tool the id was auto generated (${rid}).")
             }else{
                 if(existingChest.first != null) {
@@ -562,7 +564,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         }else{
             val sender = db.getSender()
             if(sender.size == 1) {
-                currentSender = sender[0]
+                currentSender[player.uniqueId.toString()] = sender[0].sid
                 player.sendMessage("${ChatColor.YELLOW}No sender was selected. Since there is only one sender configured yet, this sender was selected automatically")
                 handleReceiverHoe(player, block)
             }else{
