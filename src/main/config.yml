@@ -1,7 +1,14 @@
-# Version 1.4.0
+# Version 1.5.0
 
 # If enabled = false the plugin will not do anything
 enabled: true
+
+# animation configuration
+animation:
+  # If true items are being animated. If false no animation will be drawn
+  enabled: true
+  # If true all items are being animated. If false only one item will be animated (only used if enabled = true)
+  animateAll: false
 
 # move items when they are moved into a sender chest by a hopper. This feature could be not safe to use! Enable with caution.
 sendFromHopper: false

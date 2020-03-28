@@ -1,5 +1,6 @@
 package com.flodoerr.item_chest_sorter
 
+import com.flodoerr.item_chest_sorter.animation.animateItem
 import com.flodoerr.item_chest_sorter.json.*
 import kotlinx.coroutines.runBlocking
 import net.md_5.bungee.api.chat.ClickEvent
@@ -10,6 +11,7 @@ import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
 import org.bukkit.block.Chest
+import org.bukkit.block.Container
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.HumanEntity
 import org.bukkit.entity.ItemFrame
@@ -49,9 +51,9 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
 
                 val block = e.clickedBlock!!
 
-                val isChest = block.blockData is org.bukkit.block.data.type.Chest
+                val isContainer = block.state is Container
 
-                if(isChest) {
+                if(isContainer) {
                     if(fireLevel == 65535 && displayName == SENDER_HOE_NAME) {
                         runBlocking {
                             handleSenderHoe(e.player, block)
@@ -302,6 +304,15 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         }
         //remove the item from the sender chest
         inventory.removeItem(content)
+
+        if(main.config.getBoolean("animation.enabled", false)) {
+            val animationAmount = if(main.config.getBoolean("animation.animateAll", false)){
+                amount
+            }else{
+                1
+            }
+            animateItem(content, inventory.location!!, leftChest.location, main, animationAmount)
+        }
 
         // very ugly way of doing it but I could not find another way :(
         // deleting the leftover item in the sender chest when items are put into it by a hopper
