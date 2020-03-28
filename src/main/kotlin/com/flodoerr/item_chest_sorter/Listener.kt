@@ -53,10 +53,12 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
 
                 if(isContainer) {
                     if(fireLevel == 65535 && displayName == SENDER_HOE_NAME) {
+                        e.isCancelled = true
                         runBlocking {
                             handleSenderHoe(e.player, block)
                         }
                     }else if(arrowLevel == 65535 && displayName == RECEIVER_HOE_NAME) {
+                        e.isCancelled = true
                         runBlocking {
                             handleReceiverHoe(e.player, block)
                         }
