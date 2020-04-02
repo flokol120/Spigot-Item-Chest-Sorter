@@ -52,7 +52,7 @@ class ItemChestSorter: JavaPlugin() {
         //register listener
         server.pluginManager.registerEvents(Listener(db, this), this)
         // unregister event if so configured
-        if(!config.getBoolean("sendFromHopper")) {
+        if(!config.getBoolean("sendFromHopperOrSender", false)) {
             InventoryMoveItemEvent.getHandlerList().unregister(this)
         }
     }
