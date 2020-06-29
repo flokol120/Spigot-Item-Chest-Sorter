@@ -131,14 +131,14 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                             false
                         }
 
-                        val world = player?.world ?: inventory.location!!.world!!
-
                         for (receiver in receivers) {
-                            val leftChest = world.getBlockAt(cordsToLocation(receiver.cords.left, world)).state as Container
+                            val leftLocation = cordsToLocation(receiver.cords.left)
+                            val leftChest = leftLocation.world!!.getBlockAt(leftLocation).state as Container
                             // get right chest if cords not null
                             val rightChest = if(receiver.cords.right != null) {
                                 inventory.location!!.world
-                                world.getBlockAt(cordsToLocation(receiver.cords.right!!, world)).state as Container
+                                val rightLocation = cordsToLocation(receiver.cords.right!!)
+                                rightLocation.world!!.getBlockAt(rightLocation).state as Container
                             }else{
                                 null
                             }
@@ -342,7 +342,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             }else{
                 1
             }
-            animateItem(content, inventory.location!!, leftChest.location, main, animationAmount)
+            // only animate if chest are in the same world
+
+            if(inventory.location!!.world!!.uid == leftChest.location.world!!.uid) {
+                animateItem(content, inventory.location!!, leftChest.location, main, animationAmount)
+            }
         }
 
         // very ugly way of doing it but I could not find another way :(
@@ -449,19 +453,18 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      * @author Flo Dörr
      */
     private fun locationToCords(location: Location): Cords {
-        return Cords(location.blockX, location.blockY, location.blockZ)
+        return Cords(location.blockX, location.blockY, location.blockZ, location.world!!.uid.toString())
     }
 
     /**
      * converts Cords being used in the JSON file into Bukkits Location Object
      * @param cords Cords to be converted
-     * @param world world in which those cords are
      * @return Location Object with the x, y and y coordinates and World of the Cords Object omitted
      *
      * @author Flo Dörr
      */
-    private fun cordsToLocation(cords: Cords, world: World): Location {
-        return Location(world, cords.x.toDouble(), cords.y.toDouble(), cords.z.toDouble())
+    private fun cordsToLocation(cords: Cords): Location {
+        return Location(Bukkit.getWorld(UUID.fromString(cords.world)), cords.x.toDouble(), cords.y.toDouble(), cords.z.toDouble())
     }
 
     /**
@@ -505,7 +508,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             player.spigot().sendMessage(message)
         }else{
             val chestLocation = getChestLocation((block.state as Container).inventory)
-            var sid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~sender"
+            var sid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~${Bukkit.getServer().getWorld(UUID.fromString(chestLocation.left.world))!!.name}~sender"
             sid += if(chestLocation.right != null) {
                 "~double~chest"
             }else{
@@ -536,7 +539,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             val isSenderReceiverLoop = sender?.cords == existingChest?.first?.cords
             if(existingChest == null || (main.config.getBoolean("sendFromHopperOrSender", false) &&
                         existingChest.first != null && !isSenderReceiverLoop)) {
-                var rid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~receiver"
+                var rid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~${Bukkit.getServer().getWorld(UUID.fromString(chestLocation.left.world))!!.name}~receiver"
                 rid += if(chestLocation.right != null) {
                     "~double~chest"
                 }else{
@@ -614,10 +617,10 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
     }
 
     private fun getIndicationLocation(cords: ChestLocation, world: World): Location{
-        val senderLocationLeft = cordsToLocation(cords.left, world)
+        val senderLocationLeft = cordsToLocation(cords.left)
         val leftBlock = senderLocationLeft.block.state as Chest
         val finalLocation = if(cords.right != null) {
-            val middle = senderLocationLeft.toVector().getMidpoint(cordsToLocation(cords.right!!, world).toVector())
+            val middle = senderLocationLeft.toVector().getMidpoint(cordsToLocation(cords.right!!).toVector())
             Location(world, middle.x, middle.y + 1, middle.z)
         }else{
             senderLocationLeft.y = senderLocationLeft.y + 1

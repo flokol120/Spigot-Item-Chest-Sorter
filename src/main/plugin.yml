@@ -1,11 +1,11 @@
 name: "Item-Chest-Sorter"
-version: "1.5.1"
+version: "1.6.0"
 load: POSTWORLD
 
 author: "Flo Dörr"
 authors:
   - "corylulu"
-website: "www.flodörr.com"
+website: "www.flodoerr.com"
 main: "com.flodoerr.item_chest_sorter.ItemChestSorter"
 
 commands:

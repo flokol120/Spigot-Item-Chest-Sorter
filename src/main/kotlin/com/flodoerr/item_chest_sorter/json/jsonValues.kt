@@ -1,6 +1,6 @@
 package com.flodoerr.item_chest_sorter.json
 
-data class Cords(var x: Int, var y: Int, var z: Int)
+data class Cords(var x: Int, var y: Int, var z: Int, var world: String)
 
 data class ChestLocation(var left: Cords, var right: Cords? = null)
 
