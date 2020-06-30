@@ -13,6 +13,7 @@ import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import org.bukkit.permissions.Permission
 
 
 class Commands(private val db: JsonHelper): CommandExecutor {
@@ -33,7 +34,12 @@ class Commands(private val db: JsonHelper): CommandExecutor {
             }
             "select" -> {
                 return if(args[1].toLowerCase() == "sender") {
-                    giveSenderSelectionTool(sender as Player)
+                    val permission = "ics.select.sender"
+                    if(sender.hasPermission(permission)){
+                        giveSenderSelectionTool(sender as Player)
+                    }else{
+                        showNoPermissionMessage(sender, permission)
+                    }
                     true
                 }else{
                     false
@@ -42,28 +48,45 @@ class Commands(private val db: JsonHelper): CommandExecutor {
             "remove" -> {
                 // if two args are passed, there is no remove command with an id
                 if (args.size == 2) {
-                    return getHoes(args, sender)
+                    val permission = "ics.remove.sender"
+                    val permission2 = "ics.remove.receiver"
+                    return if(sender.hasPermission(permission) || sender.hasPermission(permission2)){
+                        getHoes(args, sender)
+                    }else{
+                        showNoPermissionMessage(sender, "$permission or $permission2")
+                        true
+                    }
                 } else {
                     when {
                         // delete sender using id
                         args[1].toLowerCase() == "sender" -> {
-                            GlobalScope.launch(Dispatchers.IO) {
-                                if(db.removeSender(args[2])) {
-                                    sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
-                                }else{
-                                    sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${args[2]}. This most likely means the id was not found.")
+                            val permission = "ics.remove.sender"
+                            if(sender.hasPermission(permission)){
+                                GlobalScope.launch(Dispatchers.IO) {
+                                    if(db.removeSender(args[2])) {
+                                        sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
+                                    }else{
+                                        sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${args[2]}. This most likely means the id was not found.")
+                                    }
                                 }
+                            }else{
+                                showNoPermissionMessage(sender, permission)
                             }
                             return true
                         }
                         // delete receiver using id
                         args[1].toLowerCase() == "receiver" -> {
-                            GlobalScope.launch(Dispatchers.IO) {
-                                if(db.removeReceiver(args[2])) {
-                                    sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
-                                }else{
-                                    sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${args[2]}. This most likely means the id was not found.")
+                            val permission = "ics.remove.receiver"
+                            if(sender.hasPermission(permission)){
+                                GlobalScope.launch(Dispatchers.IO) {
+                                    if(db.removeReceiver(args[2])) {
+                                        sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
+                                    }else{
+                                        sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${args[2]}. This most likely means the id was not found.")
+                                    }
                                 }
+                            }else{
+                                showNoPermissionMessage(sender, permission)
                             }
                             return true
                         }
@@ -88,10 +111,20 @@ class Commands(private val db: JsonHelper): CommandExecutor {
     private fun getHoes(args: Array<out String>, sender: CommandSender): Boolean {
         when(args[1].toLowerCase()){
             "sender" -> {
-                giveSenderSelectionTool(sender as Player)
+                val permission = "ics.create.sender"
+                if(sender.hasPermission(permission)){
+                    giveSenderSelectionTool(sender as Player)
+                }else{
+                    showNoPermissionMessage(sender, permission)
+                }
             }
             "receiver" -> {
-                giveReceiverSelectionTool(sender as Player)
+                val permission = "ics.create.receiver"
+                if(sender.hasPermission(permission)){
+                    giveReceiverSelectionTool(sender as Player)
+                }else{
+                    showNoPermissionMessage(sender, permission)
+                }
             }
             else -> return false
         }
@@ -134,5 +167,17 @@ class Commands(private val db: JsonHelper): CommandExecutor {
         sender.inventory.addItem(item)
 
         sender.sendMessage("${ChatColor.GREEN}Here you go! Right click a single or double chest to add or remove a receiver.")
+    }
+
+    /**
+     * shows the user a message if he has no permissions
+     *
+     * @param sender to send the message to
+     * @param permission permission the user does not have
+     *
+     * @author Flo Dörr
+     */
+    private fun showNoPermissionMessage(sender: CommandSender, permission: String){
+        sender.sendMessage("${ChatColor.RED}You do not have enough permissions to do this (${permission}).")
     }
 }

@@ -12,6 +12,7 @@ import org.bukkit.block.BlockFace
 import org.bukkit.block.Chest
 import org.bukkit.block.Container
 import org.bukkit.block.data.Directional
+import org.bukkit.command.CommandSender
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.HumanEntity
 import org.bukkit.entity.ItemFrame
@@ -110,6 +111,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 // get items in chest
                 val contents: Array<ItemStack?> = inventory.contents
                 if(contents.isNotEmpty()) {
+                    val permission = "ics.use.sender"
+                    if(player != null && contents.isNotEmpty() && !player.hasPermission(permission)){
+                        showNoPermissionMessage(player, permission)
+                        return
+                    }
                     // loop through all chest slots
                     val receivers = sender.receiver
 
@@ -496,6 +502,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
     private suspend fun handleSenderHoe(player: Player, block: Block) {
         val existingSender = db.getSenderByCords(locationToCords(block.location))
         if(existingSender != null) {
+            val permission = "ics.select.sender"
+            if(!player.hasPermission(permission)){
+                showNoPermissionMessage(player, permission)
+                return
+            }
             currentSender[player.uniqueId.toString()] = existingSender.sid
             player.sendMessage("${ChatColor.GREEN}Sender chest with id '${existingSender.sid}' is now selected")
             player.inventory.setItemInMainHand(null)
@@ -507,6 +518,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             message.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${existingSender.sid}")
             player.spigot().sendMessage(message)
         }else{
+            val permission = "ics.add.sender"
+            if(!player.hasPermission(permission)){
+                showNoPermissionMessage(player, permission)
+                return
+            }
             val chestLocation = getChestLocation((block.state as Container).inventory)
             var sid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~${Bukkit.getServer().getWorld(UUID.fromString(chestLocation.left.world))!!.name}~sender"
             sid += if(chestLocation.right != null) {
@@ -539,6 +555,16 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             val isSenderReceiverLoop = sender?.cords == existingChest?.first?.cords
             if(existingChest == null || (main.config.getBoolean("sendFromHopperOrSender", false) &&
                         existingChest.first != null && !isSenderReceiverLoop)) {
+                val permission = "ics.add.receiver"
+                if(!player.hasPermission(permission)){
+                    showNoPermissionMessage(player, permission)
+                    return
+                }
+                val permission2 = "ics.create.betweenworlds"
+                if(chestLocation.left.world != sender!!.cords.left.world && !player.hasPermission(permission2)){
+                    showNoPermissionMessage(player, permission2)
+                    return
+                }
                 var rid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~${Bukkit.getServer().getWorld(UUID.fromString(chestLocation.left.world))!!.name}~receiver"
                 rid += if(chestLocation.right != null) {
                     "~double~chest"
@@ -556,6 +582,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         player.spigot().sendMessage(m1)
                     }
                     existingChest.first != null -> {
+                        val permission = "ics.remove.sender"
+                        if(!player.hasPermission(permission)){
+                            showNoPermissionMessage(player, permission)
+                            return
+                        }
                         // some ugly chat message :( ...
                         val m1 = TextComponent("This is already a sender chest! If you want to chain your chests you have to enable sendFromHopperOrSender in the config.yml. If you want to delete this chest, ")
                         m1.color = net.md_5.bungee.api.ChatColor.RED
@@ -570,6 +601,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         player.spigot().sendMessage(m1)
                     }
                     else -> {
+                        val permission = "ics.remove.receiver"
+                        if(!player.hasPermission(permission)){
+                            showNoPermissionMessage(player, permission)
+                            return
+                        }
                         // some ugly chat message :( ...
                         val m1 = TextComponent("This is already a receiver chest! If you want to delete this chest, ")
                         m1.color = net.md_5.bungee.api.ChatColor.RED
@@ -592,6 +628,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
     }
 
     private suspend fun showSetup(player: Player) {
+        val permission = "ics.show.setup"
+        if(!player.hasPermission(permission)){
+            showNoPermissionMessage(player, permission)
+            return
+        }
         val sender = currentSender[player.uniqueId.toString()]
         if(sender != null) {
             val world = player.world
@@ -669,5 +710,17 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             m1.addExtra(m3)
             player.spigot().sendMessage(m1)
         }
+    }
+
+    /**
+     * shows the user a message if he has no permissions
+     *
+     * @param sender to send the message to
+     * @param permission permission the user does not have
+     *
+     * @author Flo Dörr
+     */
+    private fun showNoPermissionMessage(sender: CommandSender, permission: String){
+        sender.sendMessage("${ChatColor.RED}You do not have enough permissions to do this (${permission}).")
     }
 }

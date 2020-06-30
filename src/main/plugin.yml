@@ -1,5 +1,5 @@
 name: "Item-Chest-Sorter"
-version: "1.6.1"
+version: "1.7.0"
 load: POSTWORLD
 
 author: "Flo Dörr"
@@ -18,3 +18,51 @@ commands:
       - itemchestsorter
 
 api-version: "1.15"
+
+permissions:
+  ics.*:
+    description: Gives access to all item-chest-sorter commands
+    children:
+      ics.create.*: true
+      ics.select.sender: true
+      ics.show.setup: true
+      ics.delete.*: true
+      ics.use.sender: true
+
+  ics.create.*:
+    description: Gives access to all item-chest-sorter create commands
+    children:
+      ics.create.sender: true
+      ics.create.receiver: true
+      ics.create.betweenworlds: true
+  ics.create.sender:
+    description: Allows the user to create a sender chest
+    default: op
+  ics.create.receiver:
+    description: Allows the user to create a receiver chest
+    default: op
+  ics.create.betweenworlds:
+    description: Allows the user to create a set whose chests are in different worlds
+
+  ics.select.sender:
+    description: Allows the user to select a sender chest
+    default: op
+  ics.show.setup:
+    description: Allows the user to show a setup when a sender is selected
+    default: op
+
+  ics.remove.*:
+    description: Gives acces to all item-chest-sorter remove commands
+    children:
+      ics.remove.sender: true
+      ics.remove.receiver: true
+  ics.remove.sender:
+    description: Allows the user to remove a sender chest
+    default: op
+  ics.remove.receiver:
+    description: Allows the user to remove a receiver chest
+    default: op
+
+  ics.use.sender:
+    description: Allows the user to use a sender chest
+    default: not op
