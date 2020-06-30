@@ -1,6 +1,7 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
+import kotlinx.coroutines.runBlocking
 import org.bukkit.event.HandlerList
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.inventory.ItemStack
@@ -20,6 +21,10 @@ class ItemChestSorter: JavaPlugin() {
 
         if(this.config.getBoolean("enabled")) {
             db = JsonHelper(dataFolder, server.consoleSender)
+
+            runBlocking {
+                db.migrateJSON(server.worlds[0].uid.toString())
+            }
 
             registerCommands()
 
