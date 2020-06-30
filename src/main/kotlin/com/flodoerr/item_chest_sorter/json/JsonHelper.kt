@@ -3,9 +3,12 @@ package com.flodoerr.item_chest_sorter.json
 import com.beust.klaxon.Klaxon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.bukkit.World
 import org.bukkit.command.ConsoleCommandSender
 import java.io.File
 import java.nio.file.Paths
+import java.util.*
+import kotlin.collections.ArrayList
 
 class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSender? = null) {
 
@@ -265,5 +268,28 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
             cachedJSON = json
             return@withContext true
         }
+    }
+
+    /**
+     * migrate json by setting the world param if this plugin was used before 1.6.0
+     * @param defaultWorld UUID of the default world
+     *
+     * @author Flo Dörr
+     */
+    suspend fun migrateJSON(defaultWorld: String) {
+        val json: JSON = getJSON()
+        for (sender in json.sender){
+            if(sender.cords.left.world == null){
+                sender.cords.left.world = defaultWorld
+                sender.cords.right?.world = defaultWorld
+            }
+            for(receiver in sender.receiver) {
+                if(receiver.cords.left.world == null){
+                    receiver.cords.left.world = defaultWorld
+                    receiver.cords.right?.world = defaultWorld
+                }
+            }
+        }
+        saveJSON(json)
     }
 }
