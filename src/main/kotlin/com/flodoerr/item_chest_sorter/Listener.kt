@@ -7,10 +7,7 @@ import kotlinx.coroutines.runBlocking
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.*
-import org.bukkit.block.Block
-import org.bukkit.block.BlockFace
-import org.bukkit.block.Chest
-import org.bukkit.block.Container
+import org.bukkit.block.*
 import org.bukkit.block.data.Directional
 import org.bukkit.command.CommandSender
 import org.bukkit.enchantments.Enchantment
@@ -48,21 +45,25 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
 
             if(fireLevel == 65535 || arrowLevel == 65535) {
                 if(e.clickedBlock != null && e.clickedBlock?.state is Container) {
+                    if(e.clickedBlock?.state !is ShulkerBox || e.clickedBlock?.state is ShulkerBox && main.config.getBoolean("allowShulkerBoxes", false)) {
+                        val displayName = itemMeta.displayName
 
-                    val displayName = itemMeta.displayName
+                        val block = e.clickedBlock!!
 
-                    val block = e.clickedBlock!!
-
-                    if(fireLevel == 65535 && displayName == SENDER_HOE_NAME) {
-                        e.isCancelled = true
-                        runBlocking {
-                            handleSenderHoe(e.player, block)
+                        if(fireLevel == 65535 && displayName == SENDER_HOE_NAME) {
+                            e.isCancelled = true
+                            runBlocking {
+                                handleSenderHoe(e.player, block)
+                            }
+                        }else if(arrowLevel == 65535 && displayName == RECEIVER_HOE_NAME) {
+                            e.isCancelled = true
+                            runBlocking {
+                                handleReceiverHoe(e.player, block)
+                            }
                         }
-                    }else if(arrowLevel == 65535 && displayName == RECEIVER_HOE_NAME) {
+                    }else{
+                        e.player.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
                         e.isCancelled = true
-                        runBlocking {
-                            handleReceiverHoe(e.player, block)
-                        }
                     }
                 }else{
                     e.isCancelled = true

@@ -1,4 +1,4 @@
-# Version 1.7.0
+# Version 1.7.1
 
 # If enabled = false the plugin will not do anything
 enabled: true
@@ -13,6 +13,10 @@ animation:
 # move items when they are moved into a sender chest by a hopper or another sender chest.
 # This feature could be not safe to use! Enable with caution.
 sendFromHopperOrSender: false
+
+# allows shulker boxes to be used as sender and/or receivers.
+# Breaking shulker boxes without deleting them from a sender/receiver system will result in errors.
+allowShulkerBoxes: false
 
 # allows the use of Regular Expressions in sets
 # example: '.*_log' to match all things that end with "_log"
