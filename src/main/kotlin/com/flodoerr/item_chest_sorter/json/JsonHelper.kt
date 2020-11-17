@@ -111,6 +111,28 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
     }
 
     /**
+     * checks if a chest was saved by given coordinates
+     * @param cords coordinates of a potential chest
+     * @return true if found, false if not
+     *
+     * @author Flo Dörr
+     */
+    suspend fun chestExists(cords: Cords): Boolean {
+        val json = getJSON()
+        for (sender in json.sender) {
+            for (receiver in sender.receiver) {
+                if(receiver.cords.left == cords || receiver.cords.right == cords) {
+                    return true
+                }
+            }
+            if(sender.cords.left == cords || sender.cords.right == cords) {
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
      * returns all saved sender
      * @return List of sender
      *

@@ -1,4 +1,4 @@
-# Version 1.7.1
+# Version 1.7.3
 
 # If enabled = false the plugin will not do anything
 enabled: true
@@ -12,6 +12,7 @@ animation:
 
 # move items when they are moved into a sender chest by a hopper or another sender chest.
 # This feature could be not safe to use! Enable with caution.
+# keep in mind that setting this to true can imply a small loss of performance.
 sendFromHopperOrSender: false
 
 # allows shulker boxes to be used as sender and/or receivers.
@@ -21,6 +22,11 @@ allowShulkerBoxes: false
 # allows the use of Regular Expressions in sets
 # example: '.*_log' to match all things that end with "_log"
 enableSetsRegex: true
+
+# defines whether user can break chests which are defined as sender and/or receivers
+# if set to true users CAN break containers registered by this plugin, if set to false users CANNOT break them.
+# keep in mind that setting this to false can imply a small loss of performance.
+allowBreakOfChest: true
 
 # define sets if you want similar items to be moved to just one chest
 # look at the examples if you want to add a new set.

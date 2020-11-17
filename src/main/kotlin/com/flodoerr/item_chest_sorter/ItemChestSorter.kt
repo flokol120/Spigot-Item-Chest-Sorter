@@ -3,6 +3,7 @@ package com.flodoerr.item_chest_sorter
 import com.flodoerr.item_chest_sorter.json.JsonHelper
 import kotlinx.coroutines.runBlocking
 import org.bukkit.event.HandlerList
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
@@ -59,6 +60,9 @@ class ItemChestSorter: JavaPlugin() {
         // unregister event if so configured
         if(!config.getBoolean("sendFromHopperOrSender", false)) {
             InventoryMoveItemEvent.getHandlerList().unregister(this)
+        }
+        if(config.getBoolean("allowBreakOfChest", true)) {
+            BlockBreakEvent.getHandlerList().unregister(this);
         }
     }
 

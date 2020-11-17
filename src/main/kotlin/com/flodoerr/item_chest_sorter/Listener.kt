@@ -17,6 +17,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.inventory.InventoryType
@@ -87,6 +88,38 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         runBlocking {
             if(e.destination.type == InventoryType.CHEST && (e.source.type == InventoryType.HOPPER || e.source.type == InventoryType.CHEST)) {
                 checkInventory(e.destination, null, e.item)
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun onBlockBreakEvent(e: BlockBreakEvent) {
+        runBlocking {
+            if(db.chestExists(locationToCords(e.block.location))) {
+                e.isCancelled = true
+
+                // some ugly chat message :( ...
+                val m1 = TextComponent("This chest is either a sender or a receiver. Remove it using ")
+                m1.color = net.md_5.bungee.api.ChatColor.RED
+                val m2 = TextComponent("/ics remove sender")
+                m2.isItalic = true
+                m2.color = net.md_5.bungee.api.ChatColor.GRAY
+                m2.isUnderlined = true
+                m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender")
+                val m3 = TextComponent(" or ")
+                m3.color = net.md_5.bungee.api.ChatColor.RED
+                val m4 = TextComponent("/ics remove receiver")
+                m4.isItalic = true
+                m4.color = net.md_5.bungee.api.ChatColor.GRAY
+                m4.isUnderlined = true
+                m4.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove receiver")
+                val m5 = TextComponent(" before breaking it.")
+                m5.color = net.md_5.bungee.api.ChatColor.RED
+                m1.addExtra(m2)
+                m1.addExtra(m3)
+                m1.addExtra(m4)
+                m1.addExtra(m5)
+                e.player.spigot().sendMessage(m1)
             }
         }
     }
