@@ -2,7 +2,7 @@
 A spigot minecraft plugin to sort your messy items into separate chests
 
 ## This plugin is only tested with spigot. There are reports about funny things happening when using the spigot Fork 'Paper'. 
-## If you are using Paper and experencing some weirdness; please only open an issue if this problem also appears when using spigot.
+## If you are using Paper and experiencing some weirdness; please only open an issue if this problem also appears when using spigot.
 
 ## How can I build a jar using IntelliJ idea which I can use on my server?
 ### 1. Setup an artifact
