@@ -1,4 +1,4 @@
-# Version 1.8.0
+# Version 1.8.1
 
 # If enabled = false the plugin will not do anything
 enabled: true
@@ -34,6 +34,23 @@ enableSetsRegex: true
 # if set to true users CAN break containers registered by this plugin, if set to false users CANNOT break them.
 # keep in mind that setting this to false can imply a small loss of performance.
 allowBreakOfChest: true
+
+# ability to enable/disable certain chat messages
+chatMessages:
+  # sends a message to a player or the console after sorting, containing which and how many items are sorted
+  sorted: true
+  # sends a message if shulker boxes are disabled and a player tries tu use them
+  disabledShulkerBoxes: true
+  # sends a message if a player tries to break a sender/receiver chest
+  breakingChests: true
+  # sends a message if a chest is defined as a receiver but does not have an item frame attached to it
+  noItemFrame: true
+  # sends a message to a player if items will be sorted into an 'air chest'
+  sortinToAirChest: true
+  # sends a message to a player or the console if no receivers are configured for a sender
+  noReceivers: true
+  # sends a message to a player or the console if a chest is full after the sorting is completed
+  fullChest: true
 
 # define sets if you want similar items to be moved to just one chest
 # look at the examples if you want to add a new set.

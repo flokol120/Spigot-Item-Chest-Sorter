@@ -63,7 +63,9 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                             }
                         }
                     }else{
-                        e.player.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
+                        if(main.config.getBoolean("chatMessages.disabledShulkerBoxes", true)) {
+                            e.player.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
+                        }
                         e.isCancelled = true
                     }
                 }else{
@@ -98,28 +100,30 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             if(db.chestExists(locationToCords(e.block.location))) {
                 e.isCancelled = true
 
-                // some ugly chat message :( ...
-                val m1 = TextComponent("This chest is either a sender or a receiver. Remove it using ")
-                m1.color = net.md_5.bungee.api.ChatColor.RED
-                val m2 = TextComponent("/ics remove sender")
-                m2.isItalic = true
-                m2.color = net.md_5.bungee.api.ChatColor.GRAY
-                m2.isUnderlined = true
-                m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender")
-                val m3 = TextComponent(" or ")
-                m3.color = net.md_5.bungee.api.ChatColor.RED
-                val m4 = TextComponent("/ics remove receiver")
-                m4.isItalic = true
-                m4.color = net.md_5.bungee.api.ChatColor.GRAY
-                m4.isUnderlined = true
-                m4.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove receiver")
-                val m5 = TextComponent(" before breaking it.")
-                m5.color = net.md_5.bungee.api.ChatColor.RED
-                m1.addExtra(m2)
-                m1.addExtra(m3)
-                m1.addExtra(m4)
-                m1.addExtra(m5)
-                e.player.spigot().sendMessage(m1)
+                if(main.config.getBoolean("chatMessages.breakingChests", true)) {
+                    // some ugly chat message :( ...
+                    val m1 = TextComponent("This chest is either a sender or a receiver. Remove it using ")
+                    m1.color = net.md_5.bungee.api.ChatColor.RED
+                    val m2 = TextComponent("/ics remove sender")
+                    m2.isItalic = true
+                    m2.color = net.md_5.bungee.api.ChatColor.GRAY
+                    m2.isUnderlined = true
+                    m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender")
+                    val m3 = TextComponent(" or ")
+                    m3.color = net.md_5.bungee.api.ChatColor.RED
+                    val m4 = TextComponent("/ics remove receiver")
+                    m4.isItalic = true
+                    m4.color = net.md_5.bungee.api.ChatColor.GRAY
+                    m4.isUnderlined = true
+                    m4.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove receiver")
+                    val m5 = TextComponent(" before breaking it.")
+                    m5.color = net.md_5.bungee.api.ChatColor.RED
+                    m1.addExtra(m2)
+                    m1.addExtra(m3)
+                    m1.addExtra(m4)
+                    m1.addExtra(m5)
+                    e.player.spigot().sendMessage(m1)
+                }
             }
         }
     }
@@ -196,11 +200,13 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                                         airReceiver.add(map)
                                     }
                                 }else{
-                                    val message = "${ChatColor.YELLOW}There is a receiver chest which has no item frame on it. Please but an item frame on a receiver chest, containing the target item/block. You can also leave the item frame empty to accept all items which could not be sorted."
-                                    if(player != null) {
-                                        player.sendMessage(message)
-                                    }else{
-                                        main.server.consoleSender.sendMessage(message)
+                                    if(main.config.getBoolean("chatMessages.noItemFrame", true)) {
+                                        val message = "${ChatColor.YELLOW}There is a receiver chest which has no item frame on it. Please but an item frame on a receiver chest, containing the target item/block. You can also leave the item frame empty to accept all items which could not be sorted."
+                                        if(player != null) {
+                                            player.sendMessage(message)
+                                        }else{
+                                            main.server.consoleSender.sendMessage(message)
+                                        }
                                     }
                                 }
                             }
@@ -243,7 +249,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                                         handleItems(leftOver, player, inventory, airReceiver, itemStack != null, overwriteAnimation)
                                     }
                                 }
-                                if(sendMessage) {
+                                if(sendMessage && main.config.getBoolean("chatMessages.sortinToAirChest", true)) {
                                     // only send a message to the player if there is more than air in the chest
                                     val message = "${ChatColor.YELLOW}Found item(s) which are/is not specified. Sorting into air chest, if there is enough space..."
                                     if(player != null) {
@@ -254,27 +260,31 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                                 }
                             }
                         }else {
-                            if(player != null) {
-                                // some ugly chat message :( ...
-                                val m1 = TextComponent("There are no receivers configured yet. Use the ")
-                                m1.color = net.md_5.bungee.api.ChatColor.YELLOW
-                                val m2 = TextComponent("/ics add receiver ")
-                                m2.isItalic = true
-                                m2.color = net.md_5.bungee.api.ChatColor.GRAY
-                                m2.isUnderlined = true
-                                m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics add receiver")
-                                val m3 = TextComponent("command.")
-                                m3.color = net.md_5.bungee.api.ChatColor.YELLOW
-                                m1.addExtra(m2)
-                                m1.addExtra(m3)
-                                player.spigot().sendMessage(m1)
-                            }else{
-                                main.server.consoleSender.sendMessage("There are no receivers configured yet")
+                            if(main.config.getBoolean("chatMessages.noReceivers", true)) {
+                                if(player != null) {
+                                    // some ugly chat message :( ...
+                                    val m1 = TextComponent("There are no receivers configured yet. Use the ")
+                                    m1.color = net.md_5.bungee.api.ChatColor.YELLOW
+                                    val m2 = TextComponent("/ics add receiver ")
+                                    m2.isItalic = true
+                                    m2.color = net.md_5.bungee.api.ChatColor.GRAY
+                                    m2.isUnderlined = true
+                                    m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics add receiver")
+                                    val m3 = TextComponent("command.")
+                                    m3.color = net.md_5.bungee.api.ChatColor.YELLOW
+                                    m1.addExtra(m2)
+                                    m1.addExtra(m3)
+                                    player.spigot().sendMessage(m1)
+                                }else{
+                                    main.server.consoleSender.sendMessage("There are no receivers configured yet")
+                                }
                             }
                         }
                     }
                 }else{
-                    player?.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
+                    if(main.config.getBoolean("chatMessages.disabledShulkerBoxes", true)) {
+                        player?.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
+                    }
                 }
             }
         }
@@ -303,7 +313,9 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 if((block == null || block.type.isAir) || block.type == content.type || main.isItemInSet(content, block)) {
                     val leftChest = receiver["leftChest"] as Container
                     if(leftChest.inventory.type === InventoryType.SHULKER_BOX && !main.config.getBoolean("allowShulkerBoxes", false)) {
-                        player?.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
+                        if(main.config.getBoolean("chatMessages.disabledShulkerBoxes", true)) {
+                            player?.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
+                        }
                         continue
                     }
                     // determine whether the chest has enough space to hold the items
@@ -316,11 +328,13 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                     // only put the amount of items in the receiver chest it can hold
                     if (spaceResult > 0) {
                         content.amount -= spaceResult
-                        val message = "${ChatColor.DARK_GREEN}A chest is about to be full. ${ChatColor.YELLOW}$spaceResult${ChatColor.DARK_GREEN} items will be left over if no other chest with this item is defined."
-                        if(player != null) {
-                            player.sendMessage(message)
-                        }else{
-                            main.server.consoleSender.sendMessage(message)
+                        if(main.config.getBoolean("chatMessages.fullChest", true)) {
+                            val message = "${ChatColor.DARK_GREEN}A chest is about to be full. ${ChatColor.YELLOW}$spaceResult${ChatColor.DARK_GREEN} items will be left over if no other chest with this item is defined."
+                            if(player != null) {
+                                player.sendMessage(message)
+                            }else{
+                                main.server.consoleSender.sendMessage(message)
+                            }
                         }
                     }
                     // move the items
@@ -364,12 +378,13 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         // add to (left) chest. Do not use blockInventory as its only the leftChests inventory
         // inventory represents the whole potential double chest inventory
         leftChest.inventory.addItem(content)
-
-        val message = "${ChatColor.GREEN}sorted ${ChatColor.YELLOW}${amount} ${ChatColor.GREEN}${ChatColor.AQUA}${getItemName(content)} ${ChatColor.GREEN}to your chest"
-        if(player != null) {
-            player.sendMessage(message)
-        }else{
-            main.server.consoleSender.sendMessage(message)
+        if(main.config.getBoolean("chatMessages.sorted", true)) {
+            val message = "${ChatColor.GREEN}sorted ${ChatColor.YELLOW}${amount} ${ChatColor.GREEN}${ChatColor.AQUA}${getItemName(content)} ${ChatColor.GREEN}to your chest"
+            if(player != null) {
+                player.sendMessage(message)
+            }else{
+                main.server.consoleSender.sendMessage(message)
+            }
         }
         //remove the item from the sender chest
         inventory.removeItem(content)
