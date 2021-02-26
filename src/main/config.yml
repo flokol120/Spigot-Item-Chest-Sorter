@@ -1,7 +1,14 @@
-# Version 1.7.3
+# Version 1.8.0
 
 # If enabled = false the plugin will not do anything
 enabled: true
+
+# Performance mode
+# if enabled not every new chest is directly saved to the disk. This can be useful for big servers and servers with HDD
+# drives. !But his may lead to data loss if the server crashes!
+performance: false
+# only used if performance mode is set to true. Autosaves after set interval (in minutes)
+autoSaveInterval: 5
 
 # animation configuration
 animation:

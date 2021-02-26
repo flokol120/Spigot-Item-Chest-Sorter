@@ -9,8 +9,14 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.StringUtil
 import java.nio.file.Paths
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.concurrent.fixedRateTimer
 
 class ItemChestSorter: JavaPlugin() {
+
+    private var saveInterval = 0L
+    private var timer: Timer? = null
 
     private lateinit var db: JsonHelper
     private var setsRegex = ArrayList<ArrayList<Regex>>()
@@ -21,7 +27,15 @@ class ItemChestSorter: JavaPlugin() {
         createConfig()
 
         if(this.config.getBoolean("enabled")) {
-            db = JsonHelper(dataFolder, server.consoleSender)
+            val performanceMode = config.getBoolean("performance", false)
+            db = JsonHelper(dataFolder, server.consoleSender, performanceMode = performanceMode)
+
+            if(performanceMode) {
+                saveInterval = config.getInt("autoSaveInterval", 5) * 60L * 1000L;
+                timer = fixedRateTimer("automaticSave", false, saveInterval, saveInterval) {
+                    runBlocking { db.saveJSON() }
+                }
+            }
 
             runBlocking {
                 db.migrateJSON(server.worlds[0].uid.toString())
@@ -44,6 +58,16 @@ class ItemChestSorter: JavaPlugin() {
     }
 
     override fun onDisable() {
+        runBlocking {
+            if(db.saveJSON()) {
+                server.consoleSender.sendMessage("Item-Chest-Sorter successfully saved its database before shutdown")
+            }else{
+                server.consoleSender.sendMessage("Item-Chest-Sorter DID NOT successfully save its database before shutdown")
+            }
+        }
+        if(timer != null) {
+            timer!!.cancel()
+        }
         HandlerList.unregisterAll(this)
         server.consoleSender.sendMessage("Item-Chest-Sorter is going to stop...")
         super.onDisable()

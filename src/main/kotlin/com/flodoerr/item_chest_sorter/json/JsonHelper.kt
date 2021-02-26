@@ -10,7 +10,7 @@ import java.nio.file.Paths
 import java.util.*
 import kotlin.collections.ArrayList
 
-class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSender? = null) {
+class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSender? = null, private val performanceMode: Boolean) {
 
     private val jsonFile = Paths.get(dataFolder.absolutePath, "chests.json").toFile()
     private val doNotTouchFile = Paths.get(dataFolder.absolutePath, "README (don't touch the json file if you don't know what you are doing)").toFile()
@@ -43,7 +43,8 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
             }
         }
         json.sender.add(sender)
-        return saveJSON(json)
+        saveJSONIfNecessary(json)
+        return true
     }
 
     /**
@@ -69,7 +70,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
         for (sender in json.sender){
             if(sid == sender.sid) {
                 json.sender.remove(sender)
-                saveJSON(json)
+                saveJSONIfNecessary(json)
                 return true
             }
         }
@@ -172,7 +173,8 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
                     }
                 }
                 jsonSender.receiver.add(receiver)
-                return saveJSON(json)
+                saveJSONIfNecessary(json)
+                return true
             }
         }
         return false
@@ -202,7 +204,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
             for (receiver in sender.receiver) {
                 if(receiver.rid == rid) {
                     sender.receiver.remove(receiver)
-                    saveJSON(json)
+                    saveJSONIfNecessary(json)
                     return true
                 }
             }
@@ -274,6 +276,20 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
     }
 
     /**
+     * saves json to drive if not in performance mode
+     * @param json JSON object to be potentially saved
+     * @return true saved
+     *
+     * @author Flo Dörr
+     */
+    private suspend fun saveJSONIfNecessary(json: JSON): Boolean {
+        if(performanceMode) {
+            return false
+        }
+        return saveJSON(json);
+    }
+
+    /**
      * writes JSON object back to disk
      * @param json JSON object to be saved
      * @return true if saved successfully
@@ -290,6 +306,19 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
             cachedJSON = json
             return@withContext true
         }
+    }
+
+    /**
+     * writes JSON object back to disk
+     * @return true if saved successfully
+     *
+     * @author Flo Dörr
+     */
+    suspend fun saveJSON(): Boolean {
+        if (cachedJSON == null) {
+            return false
+        }
+        return saveJSON(cachedJSON!!)
     }
 
     /**
