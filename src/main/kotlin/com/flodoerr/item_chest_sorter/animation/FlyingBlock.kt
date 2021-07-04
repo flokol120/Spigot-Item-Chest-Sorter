@@ -83,7 +83,7 @@ fun animateItem(item: ItemStack, start: Location, target: Location, plugin: Java
                 stand.remove()
                 animating = false
             }
-        }.runTaskLaterAsynchronously(plugin, duration.toLong() + delay.toLong())
+        }.runTaskLater(plugin, duration.toLong() + delay.toLong())//runTaskLaterAsynchronously(plugin, duration.toLong() + delay.toLong())
     }
 }
 
