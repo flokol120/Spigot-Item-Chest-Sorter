@@ -580,6 +580,10 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 showNoPermissionMessage(player, permission)
                 return
             }
+            if(!isAbleToCreateNewChest(player)) {
+                showNoMoreChestsMessage(player)
+                return
+            }
             val chestLocation = getChestLocation((block.state as Container).inventory)
             var sid = "${chestLocation.left.x}~${chestLocation.left.y}~${chestLocation.left.z}~${Bukkit.getServer().getWorld(UUID.fromString(chestLocation.left.world))!!.name}~sender"
             sid += if(chestLocation.right != null) {
@@ -587,7 +591,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             }else{
                 "~chest"
             }
-            val sender = Sender(sid, "Sender", chestLocation)
+            val sender = Sender(sid, "Sender", chestLocation, ArrayList(), player.uniqueId.toString())
             currentSender[player.uniqueId.toString()] = sender.sid
             db.addSender(sender)
 
@@ -617,6 +621,10 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                     showNoPermissionMessage(player, permission)
                     return
                 }
+                if(!isAbleToCreateNewChest(player)) {
+                    showNoMoreChestsMessage(player)
+                    return
+                }
                 val permission2 = "ics.create.betweenworlds"
                 if(chestLocation.left.world != sender!!.cords.left.world && !player.hasPermission(permission2)){
                     showNoPermissionMessage(player, permission2)
@@ -628,7 +636,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 }else{
                     "~chest"
                 }
-                db.addReceiverToSender(Receiver(rid, chestLocation), currentSender[player.uniqueId.toString()]!!)
+                db.addReceiverToSender(Receiver(rid, chestLocation, player.uniqueId.toString()), currentSender[player.uniqueId.toString()]!!)
                 player.sendMessage("${ChatColor.GREEN}Successfully saved this chest as a receiver chest. Because you used the hoe tool the id was auto generated (${rid}).")
             }else{
                 when {
@@ -682,6 +690,28 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                 }
             }
         }
+    }
+
+    private suspend fun isAbleToCreateNewChest(player: Player): Boolean {
+        val ableToPlace = getPlayerMaxChestCount(player)
+        return ableToPlace == -1 || db.getChestCountByPlayer(player.uniqueId.toString()) < ableToPlace
+    }
+
+    private fun getPlayerMaxChestCount(player: Player): Int {
+        val permission = "ics.create.max"
+        var ableToPlace = -1
+        for (playerPermission in player.effectivePermissions) {
+            if(playerPermission.permission == "$permission.*" && playerPermission.value) {
+                return -1
+            }
+            if(playerPermission.permission.startsWith(permission) && playerPermission.value) {
+                val currCount = playerPermission.permission.split(".").last().toInt()
+                if(currCount > ableToPlace) {
+                    ableToPlace = currCount
+                }
+            }
+        }
+        return ableToPlace
     }
 
     private suspend fun showSetup(player: Player) {
@@ -779,5 +809,16 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      */
     private fun showNoPermissionMessage(sender: CommandSender, permission: String){
         sender.sendMessage("${ChatColor.RED}You do not have enough permissions to do this (${permission}).")
+    }
+
+    /**
+     * shows the user a message if he cannot place any more chests
+     *
+     * @param sender to send the message to
+     *
+     * @author Flo Dörr
+     */
+    private fun showNoMoreChestsMessage(sender: CommandSender){
+        sender.sendMessage("${ChatColor.RED}You are only allowed to register ${getPlayerMaxChestCount(sender as Player)} chests.")
     }
 }

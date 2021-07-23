@@ -327,7 +327,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun migrateJSON(defaultWorld: String) {
+    suspend fun migrateMissingWorldNamesJSON(defaultWorld: String) {
         val json: JSON = getJSON()
         for (sender in json.sender){
             if(sender.cords.left.world == null){
@@ -342,5 +342,27 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
             }
         }
         saveJSON(json)
+    }
+
+    /**
+     * gets the count of registered chest by a players uuid. Counts senders and receivers.
+     * @return count of registered chests
+     *
+     * @author Flo Dörr
+     */
+    suspend fun getChestCountByPlayer(playerUUID: String): Int {
+        var count = 0
+        val json: JSON = getJSON()
+        for(sender in json.sender) {
+            if(sender.playerID == playerUUID) {
+                count++
+            }
+            for (receiver in sender.receiver) {
+                if (receiver.playerID == playerUUID) {
+                    count++
+                }
+            }
+        }
+        return count
     }
 }

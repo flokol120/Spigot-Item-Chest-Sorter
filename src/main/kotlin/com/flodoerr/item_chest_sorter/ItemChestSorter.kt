@@ -38,7 +38,7 @@ class ItemChestSorter: JavaPlugin() {
             }
 
             runBlocking {
-                db.migrateJSON(server.worlds[0].uid.toString())
+                db.migrateMissingWorldNamesJSON(server.worlds[0].uid.toString())
             }
 
             registerCommands()
