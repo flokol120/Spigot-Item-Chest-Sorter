@@ -4,44 +4,43 @@ import com.flodoerr.item_chest_sorter.json.JsonHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
+import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.permissions.Permission
+import java.util.*
 
 
-class Commands(private val db: JsonHelper): CommandExecutor {
+class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         // commands can only be used by a player
-        if(sender is ConsoleCommandSender) {
+        if (sender is ConsoleCommandSender) {
             sender.sendMessage("this commands can only be used in-game")
             return true
         }
-        // only accepts more than 1 arguments
-        if(args.size < 2) {
-            return false
-        }
         // switch block for the sub commands
-        when(args[0].toLowerCase()) {
+        when (args[0].lowercase(Locale.getDefault())) {
             "add" -> {
                 return getHoes(args, sender)
             }
             "select" -> {
-                return if(args[1].toLowerCase() == "sender") {
+                return if (args[1].lowercase(Locale.getDefault()) == "sender") {
                     val permission = "ics.select.sender"
-                    if(sender.hasPermission(permission)){
+                    if (sender.hasPermission(permission)) {
                         giveSenderSelectionTool(sender as Player)
-                    }else{
+                    } else {
                         showNoPermissionMessage(sender, permission)
                     }
                     true
-                }else{
+                } else {
                     false
                 }
             }
@@ -50,42 +49,42 @@ class Commands(private val db: JsonHelper): CommandExecutor {
                 if (args.size == 2) {
                     val permission = "ics.remove.sender"
                     val permission2 = "ics.remove.receiver"
-                    return if(sender.hasPermission(permission) || sender.hasPermission(permission2)){
+                    return if (sender.hasPermission(permission) || sender.hasPermission(permission2)) {
                         getHoes(args, sender)
-                    }else{
+                    } else {
                         showNoPermissionMessage(sender, "$permission or $permission2")
                         true
                     }
                 } else {
                     when {
                         // delete sender using id
-                        args[1].toLowerCase() == "sender" -> {
+                        args[1].lowercase(Locale.getDefault()) == "sender" -> {
                             val permission = "ics.remove.sender"
-                            if(sender.hasPermission(permission)){
+                            if (sender.hasPermission(permission)) {
                                 GlobalScope.launch(Dispatchers.IO) {
-                                    if(db.removeSender(args[2])) {
+                                    if (db.removeSender(args[2])) {
                                         sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
-                                    }else{
+                                    } else {
                                         sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${args[2]}. This most likely means the id was not found.")
                                     }
                                 }
-                            }else{
+                            } else {
                                 showNoPermissionMessage(sender, permission)
                             }
                             return true
                         }
                         // delete receiver using id
-                        args[1].toLowerCase() == "receiver" -> {
+                        args[1].lowercase(Locale.getDefault()) == "receiver" -> {
                             val permission = "ics.remove.receiver"
-                            if(sender.hasPermission(permission)){
+                            if (sender.hasPermission(permission)) {
                                 GlobalScope.launch(Dispatchers.IO) {
-                                    if(db.removeReceiver(args[2])) {
+                                    if (db.removeReceiver(args[2])) {
                                         sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
-                                    }else{
+                                    } else {
                                         sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${args[2]}. This most likely means the id was not found.")
                                     }
                                 }
-                            }else{
+                            } else {
                                 showNoPermissionMessage(sender, permission)
                             }
                             return true
@@ -95,6 +94,13 @@ class Commands(private val db: JsonHelper): CommandExecutor {
                         }
                     }
                 }
+            }
+            "reload" -> {
+                runBlocking {
+                    ics.reload()
+                    sender.sendMessage("${ChatColor.GREEN}Reload complete.")
+                }
+                return true
             }
             else -> return false
         }
@@ -109,20 +115,20 @@ class Commands(private val db: JsonHelper): CommandExecutor {
      * @author Flo Dörr
      */
     private fun getHoes(args: Array<out String>, sender: CommandSender): Boolean {
-        when(args[1].toLowerCase()){
+        when (args[1].lowercase(Locale.getDefault())) {
             "sender" -> {
                 val permission = "ics.create.sender"
-                if(sender.hasPermission(permission)){
+                if (sender.hasPermission(permission)) {
                     giveSenderSelectionTool(sender as Player)
-                }else{
+                } else {
                     showNoPermissionMessage(sender, permission)
                 }
             }
             "receiver" -> {
                 val permission = "ics.create.receiver"
-                if(sender.hasPermission(permission)){
+                if (sender.hasPermission(permission)) {
                     giveReceiverSelectionTool(sender as Player)
-                }else{
+                } else {
                     showNoPermissionMessage(sender, permission)
                 }
             }

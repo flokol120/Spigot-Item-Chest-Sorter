@@ -201,7 +201,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                                     }
                                 }else{
                                     if(main.config.getBoolean("chatMessages.noItemFrame", true)) {
-                                        val message = "${ChatColor.YELLOW}There is a receiver chest which has no item frame on it. Please but an item frame on a receiver chest, containing the target item/block. You can also leave the item frame empty to accept all items which could not be sorted."
+                                        val message = "${ChatColor.YELLOW}There is a receiver chest which has no item frame on it. Please put an item frame on a receiver chest, containing the target item/block. You can also leave the item frame empty to accept all items which could not be sorted."
                                         if(player != null) {
                                             player.sendMessage(message)
                                         }else{
@@ -456,8 +456,8 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         // hack the item/block name together...
         return if(item.hasItemMeta()) {
             item.itemMeta!!.displayName
-        }else{
-            item.type.name.toLowerCase().replace("_", " ")
+        }else {
+            item.type.name.lowercase(Locale.getDefault()).replace("_", " ")
         }
     }
 
@@ -575,7 +575,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             message.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${existingSender.sid}")
             player.spigot().sendMessage(message)
         }else{
-            val permission = "ics.add.sender"
+            val permission = "ics.create.sender"
             if(!player.hasPermission(permission)){
                 showNoPermissionMessage(player, permission)
                 return
@@ -616,7 +616,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             val isSenderReceiverLoop = sender?.cords == existingChest?.first?.cords
             if(existingChest == null || (main.config.getBoolean("sendFromHopperOrSender", false) &&
                         existingChest.first != null && !isSenderReceiverLoop)) {
-                val permission = "ics.add.receiver"
+                val permission = "ics.create.receiver"
                 if(!player.hasPermission(permission)){
                     showNoPermissionMessage(player, permission)
                     return

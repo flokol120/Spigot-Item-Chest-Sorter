@@ -31,7 +31,7 @@ class ItemChestSorter: JavaPlugin() {
             db = JsonHelper(dataFolder, server.consoleSender, performanceMode = performanceMode)
 
             if(performanceMode) {
-                saveInterval = config.getInt("autoSaveInterval", 5) * 60L * 1000L;
+                saveInterval = config.getInt("autoSaveInterval", 5) * 60L * 1000L
                 timer = fixedRateTimer("automaticSave", false, saveInterval, saveInterval) {
                     runBlocking { db.saveJSON() }
                 }
@@ -57,6 +57,18 @@ class ItemChestSorter: JavaPlugin() {
         server.consoleSender.sendMessage("Item-Chest-Sorter config reloaded.")
     }
 
+    suspend fun reload() {
+        if(db.saveJSON()) {
+            server.consoleSender.sendMessage("Item-Chest-Sorter successfully saved its database")
+            HandlerList.unregisterAll(this)
+            this.reloadConfig()
+            registerListener()
+            server.consoleSender.sendMessage("Item-Chest-Sorter reloaded.")
+        }else{
+            server.consoleSender.sendMessage("Item-Chest-Sorter DID NOT successfully save its database before shutdown")
+        }
+    }
+
     override fun onDisable() {
         runBlocking {
             if(db.saveJSON()) {
@@ -79,14 +91,16 @@ class ItemChestSorter: JavaPlugin() {
      * @author Flo Dörr
      */
     private fun registerListener() {
-        //register listener
-        server.pluginManager.registerEvents(Listener(db, this), this)
-        // unregister event if so configured
-        if(!config.getBoolean("sendFromHopperOrSender", false)) {
-            InventoryMoveItemEvent.getHandlerList().unregister(this)
-        }
-        if(config.getBoolean("allowBreakOfChest", true)) {
-            BlockBreakEvent.getHandlerList().unregister(this);
+        if(config.getBoolean("enabled")) {
+            //register listener
+            server.pluginManager.registerEvents(Listener(db, this), this)
+            // unregister event if so configured
+            if(!config.getBoolean("sendFromHopperOrSender", false)) {
+                InventoryMoveItemEvent.getHandlerList().unregister(this)
+            }
+            if(config.getBoolean("allowBreakOfChest", true)) {
+                BlockBreakEvent.getHandlerList().unregister(this)
+            }
         }
     }
 
@@ -97,17 +111,17 @@ class ItemChestSorter: JavaPlugin() {
      */
     private fun registerCommands() {
         // register commands
-        getCommand(BASE_COMMAND)!!.setExecutor(Commands(db))
+        getCommand(BASE_COMMAND)!!.setExecutor(Commands(db, this))
 
         // register tab completer
         getCommand(BASE_COMMAND)!!.setTabCompleter { _, _, _, args ->
             val completions = ArrayList<String>()
             if(args.size == 1){
                 StringUtil.copyPartialMatches(args[0], COMMANDS[0], completions)
-            }else if(args.size == 2) {
-                if(args[0].toLowerCase() == COMMANDS[0][2]) {
+            }else if(args.size == 2 && args[1] != "reload") {
+                if (args[0].lowercase(Locale.getDefault()) == COMMANDS[0][2]) {
                     return@setTabCompleter listOf(COMMANDS[1][1])
-                }else{
+                } else {
                     StringUtil.copyPartialMatches(args[1], COMMANDS[1], completions)
                 }
             }

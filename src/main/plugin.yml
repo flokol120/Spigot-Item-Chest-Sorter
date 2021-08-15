@@ -43,6 +43,7 @@ permissions:
     default: op
   ics.create.betweenworlds:
     description: Allows the user to create a set whose chests are in different worlds
+    default: op
   ics.create.max.*:
     description: Allows players to create x chests (e.g. ics.create.max.10 will grant a player 10 chests), * allows unlimited chests
     default: op
