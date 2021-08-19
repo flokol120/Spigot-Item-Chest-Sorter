@@ -27,9 +27,8 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.BoundingBox
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.concurrent.schedule
+
 
 class Listener(private val db: JsonHelper, private val main: ItemChestSorter): Listener {
 
@@ -89,6 +88,15 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
     fun onInventoryMoveItemEvent(e: InventoryMoveItemEvent) {
         runBlocking {
             if(e.destination.type == InventoryType.CHEST && (e.source.type == InventoryType.HOPPER || e.source.type == InventoryType.CHEST)) {
+                if(main.config.getBoolean("sendFromHopperOrSenderNoEmptySlot", false)) {
+                    for (stack in e.destination.contents) {
+                        if (stack == null) {
+                            return@runBlocking
+                        }
+                    }
+                    checkInventory(e.destination, null)
+                    return@runBlocking
+                }
                 checkInventory(e.destination, null, e.item)
             }
         }

@@ -1,4 +1,4 @@
-# Version 1.10.0
+# Version 1.11.0
 
 # If enabled = false the plugin will not do anything
 enabled: true
@@ -20,7 +20,11 @@ animation:
 # move items when they are moved into a sender chest by a hopper or another sender chest.
 # This feature could be not safe to use! Enable with caution.
 # keep in mind that setting this to true can imply a small loss of performance.
+#
+# To safe some resources it can be only triggered if the chest is full. Triggers the sorting as soon as no empty slot
+# is in the chest
 sendFromHopperOrSender: false
+sendFromHopperOrSenderNoEmptySlot: false
 
 # allows shulker boxes to be used as sender and/or receivers.
 # Breaking shulker boxes without deleting them from a sender/receiver system will result in errors.
@@ -57,7 +61,7 @@ chatMessages:
 # define a new array by beginning the line with - []
 # separate the items by commas.
 # you have to use the so called 'namespaced IDs'. You can find those in the minecraft wiki for almost all items.
-# example nanespaced IDs: https://minecraft.gamepedia.com/Flower#Data_values
+# example namespaced IDs: https://minecraft.gamepedia.com/Flower#Data_values
 sets:
 # example 1.1: Move all wool colors to the same chest (using explicit all ids)
 # remove the '#' in the next two lines if you want to move all different colored wool blocks into one chest

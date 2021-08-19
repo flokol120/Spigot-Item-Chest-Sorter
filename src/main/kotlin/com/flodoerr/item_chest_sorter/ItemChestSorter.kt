@@ -1,6 +1,7 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import org.bukkit.event.HandlerList
 import org.bukkit.event.block.BlockBreakEvent
@@ -70,7 +71,7 @@ class ItemChestSorter: JavaPlugin() {
     }
 
     override fun onDisable() {
-        runBlocking {
+        runBlocking(Dispatchers.IO) {
             if(db.saveJSON()) {
                 server.consoleSender.sendMessage("Item-Chest-Sorter successfully saved its database before shutdown")
             }else{
