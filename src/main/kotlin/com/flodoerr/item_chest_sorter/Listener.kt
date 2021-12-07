@@ -3,6 +3,7 @@ package com.flodoerr.item_chest_sorter
 import com.flodoerr.item_chest_sorter.animation.animateItem
 import com.flodoerr.item_chest_sorter.animation.animating
 import com.flodoerr.item_chest_sorter.json.*
+import kotlinx.coroutines.NonCancellable.cancel
 import kotlinx.coroutines.runBlocking
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.TextComponent
@@ -27,6 +28,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.BoundingBox
 import java.util.*
+import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.schedule
 
 
@@ -749,7 +751,17 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
     }
 
     private fun showParticle(location: Location, world: World) {
-        world.spawnParticle(Particle.BARRIER, location, 1)
+        location.x += 1
+        location.z += 1
+        location.y -= .5
+        var counter = 0
+        fixedRateTimer("particleTimer", false, 0L, 250L) {
+            if(counter > 20) {
+                cancel()
+            }
+            world.spawnParticle(Particle.GLOW, location, 50)
+            counter++
+        }
     }
 
     private fun getIndicationLocation(cords: ChestLocation, world: World): Location{

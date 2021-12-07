@@ -2,8 +2,6 @@ package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.bukkit.ChatColor
 import org.bukkit.Material
@@ -11,11 +9,9 @@ import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
-import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.permissions.Permission
 import java.util.*
 
 
@@ -61,7 +57,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                         args[1].lowercase(Locale.getDefault()) == "sender" -> {
                             val permission = "ics.remove.sender"
                             if (sender.hasPermission(permission)) {
-                                GlobalScope.launch(Dispatchers.IO) {
+                                runBlocking(Dispatchers.IO) {
                                     if (db.removeSender(args[2])) {
                                         sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
                                     } else {
@@ -77,7 +73,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                         args[1].lowercase(Locale.getDefault()) == "receiver" -> {
                             val permission = "ics.remove.receiver"
                             if (sender.hasPermission(permission)) {
-                                GlobalScope.launch(Dispatchers.IO) {
+                                runBlocking(Dispatchers.IO) {
                                     if (db.removeReceiver(args[2])) {
                                         sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
                                     } else {

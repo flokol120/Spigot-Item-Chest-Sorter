@@ -3,11 +3,9 @@ package com.flodoerr.item_chest_sorter.json
 import com.beust.klaxon.Klaxon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.bukkit.World
 import org.bukkit.command.ConsoleCommandSender
 import java.io.File
 import java.nio.file.Paths
-import java.util.*
 import kotlin.collections.ArrayList
 
 class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSender? = null, private val performanceMode: Boolean) {

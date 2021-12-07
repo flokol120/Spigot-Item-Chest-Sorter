@@ -25,6 +25,7 @@ hs_err_pid*
 # build folder
 build/
 dist/
+bin/
 
 # gradle
 .gradle/
