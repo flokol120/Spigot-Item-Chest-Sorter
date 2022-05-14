@@ -6,7 +6,7 @@ import java.io.File
 import java.nio.file.Paths
 import kotlin.collections.ArrayList
 
-class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSender? = null, private val performanceMode: Boolean) {
+class JsonHelper(dataFolder: File, commandSender: ConsoleCommandSender? = null, private val performanceMode: Boolean) {
 
     private val jsonFile = Paths.get(dataFolder.absolutePath, "chests.json").toFile()
     private val doNotTouchFile = Paths.get(dataFolder.absolutePath, "README (don't touch the json file if you don't know what you are doing)").toFile()
@@ -349,18 +349,10 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      * @author Flo Dörr
      */
     fun getChestCountByPlayer(playerUUID: String): Int {
-        var count = 0
-        val json: JSON = getJSON()
-        for(sender in json.sender) {
-            if(sender.playerID == playerUUID) {
-                count++
+        return getJSON().sender
+            .filter { sender -> sender.playerID == playerUUID }
+            .sumOf { sender -> 1 + sender.receiver
+                .count { receiver -> receiver.playerID == playerUUID }
             }
-            for (receiver in sender.receiver) {
-                if (receiver.playerID == playerUUID) {
-                    count++
-                }
-            }
-        }
-        return count
     }
 }

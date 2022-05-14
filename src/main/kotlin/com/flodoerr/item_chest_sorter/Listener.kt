@@ -26,13 +26,13 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.BoundingBox
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.schedule
 
 
+var currentSender: HashMap<String, String?> = HashMap()
 class Listener(private val db: JsonHelper, private val main: ItemChestSorter): Listener {
-
-    private var currentSender: HashMap<String, String> = HashMap()
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onPlayerInteractEvent(e: PlayerInteractEvent) {
@@ -147,7 +147,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                     val contents: Array<ItemStack?> = inventory.contents
                     if(contents.isNotEmpty()) {
                         val permission = "ics.use.sender"
-                        if(player != null && contents.isNotEmpty() && !player.hasPermission(permission)){
+                        if(player != null && !player.hasPermission(permission)){
                             showNoPermissionMessage(player, permission)
                             return
                         }
@@ -155,18 +155,17 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         val receivers = sender.receiver
 
                         if(receivers.size > 0) {
-                            val airReceiver = ArrayList<HashMap<String, Any?>>()
-                            val realReceiver = ArrayList<HashMap<String, Any?>>()
+                            val airReceiver = ArrayList<Pair<Container, List<ItemStack>?>>()
+                            val realReceiver = ArrayList<Pair<Container, List<ItemStack>?>>()
 
                             // overwriting the animate all setting if too many items are about to be sent, as this can
                             // potentially crash the server!!
                             val overwriteAnimation = if(main.config.getBoolean("animation.animateAll", false)) {
-                                var items = 0
-                                for (content in contents){
-                                    if (content != null && !content.type.isAir) {
-                                        items += content.amount
+                                val items = contents.filter { content -> content != null && !content.type.isAir }
+                                    .sumOf { content ->
+                                        content?.amount
+                                            ?: 0
                                     }
-                                }
                                 items >= (64 * 2)
                             }else{
                                 false
@@ -184,13 +183,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                                     null
                                 }
                                 // get block in item frame on chest
-                                val block = getItemFromItemFrameNearChest(leftChest, rightChest)
+                                val blocks = getItemFromItemFrameNearChest(leftChest, rightChest)
                                 // check if no item frame is placed and give hint to user
-                                if (block != null) {
-                                    val map = HashMap<String, Any?>()
-                                    map["leftChest"] = leftChest
-                                    map["block"] = block
-                                    if(!block.type.isAir) {
+                                if (blocks != null) {
+                                    val map = Pair(leftChest, blocks)
+                                    if(!blocks.stream().anyMatch { stack -> stack.type.isAir }) {
                                         realReceiver.add(map)
                                     }else{
                                         airReceiver.add(map)
@@ -239,11 +236,9 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                             if(leftOverContent.size > 0 && airReceiver.size > 0) {
                                 // sort items into "air chests"
                                 var sendMessage = false
-                                for (leftOver in leftOverContent) {
-                                    if(leftOver != null && !leftOver.type.isAir) {
-                                        sendMessage = true
-                                        handleItems(leftOver, player, inventory, airReceiver, itemStack != null, overwriteAnimation)
-                                    }
+                                leftOverContent.filter { left -> left != null && !left.type.isAir }.forEach { left ->
+                                    sendMessage = true
+                                    handleItems(left, player, inventory, airReceiver, itemStack != null, overwriteAnimation)
                                 }
                                 if(sendMessage && main.config.getBoolean("chatMessages.sortinToAirChest", true)) {
                                     // only send a message to the player if there is more than air in the chest
@@ -298,16 +293,16 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      * @author Flo Dörr
      */
     private fun handleItems(content: ItemStack?, player: HumanEntity?, inventory: Inventory,
-                            receivers: ArrayList<HashMap<String, Any?>>, workaround: Boolean = false, overwriteAnimation: Boolean): ItemStack? {
+                            receivers: ArrayList<Pair<Container, List<ItemStack>?>>, workaround: Boolean = false, overwriteAnimation: Boolean): ItemStack? {
         var notFound: ItemStack? = null
         if(content != null && content.amount > 0 && !content.type.isAir) {
             for (receiver in receivers) {
-                val block = receiver["block"] as ItemStack?
+                val blocks = receiver.second
                 // First check if block == null or the bloc is air, if that is the case we have found an air chest
                 // check if item in chest and item on frame are the same
                 // check if we have an item set defined in the config.yml matching the item in the frame and in the sender chest
-                if((block == null || block.type.isAir) || block.type == content.type || main.isItemInSet(content, block)) {
-                    val leftChest = receiver["leftChest"] as Container
+                if((blocks == null || blocks.stream().anyMatch { block -> block.type.isAir }) || blocks.any { block -> block.type == content.type } || main.isItemInSet(content, blocks)) {
+                    val leftChest = receiver.first
                     if(leftChest.inventory.type === InventoryType.SHULKER_BOX && !main.config.getBoolean("allowShulkerBoxes", false)) {
                         if(main.config.getBoolean("chatMessages.disabledShulkerBoxes", true)) {
                             player?.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
@@ -419,17 +414,9 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             timer!!.schedule(500) {
                 if(!moving) {
                     if(inv is Chest) {
-                        for (item in inv.blockInventory) {
-                            if (content.isSimilar(item)) {
-                                inv.blockInventory.removeItem(content)
-                            }
-                        }
+                        inv.blockInventory.filter { item -> content.isSimilar(item) }.forEach { _ -> inv.blockInventory.removeItem(content) }
                     } else {
-                        for (item in inv.inventory) {
-                            if (content.isSimilar(item)) {
-                                inv.inventory.removeItem(content)
-                            }
-                        }
+                        inv.inventory.filter { item -> content.isSimilar(item) }.forEach { _ -> inv.inventory.removeItem(content) }
                     }
                     cancel()
                 }else{
@@ -483,31 +470,22 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      * @param rightChest right chest of a double chest. If this is no double chest. right chest is null
      * @return ItemStack with the item in the item frame. Can be null if no item frame can be found
      */
-    private fun getItemFromItemFrameNearChest(leftChest: Container, rightChest: Container?): ItemStack? {
+    private fun getItemFromItemFrameNearChest(leftChest: Container, rightChest: Container?): List<ItemStack>? {
         if(!leftChest.chunk.isLoaded) {
-            println("left chunk not loaded, should load")
             if(!leftChest.chunk.load()) {
                 println("chunk of left chest could not be loaded")
             }
-        }else{
-            println("chunk of leftChest already loaded")
         }
-        if(rightChest != null && !rightChest.chunk.isLoaded) {
-            if(!rightChest.chunk.load()) {
-                println("chunk of left chest could not be loaded")
-            }
-        }else{
-            println("chunk of rightChest already loaded")
-        }
+
         // get BoundingBox of chest and expand it by .1 to find the item frame
         val box = BoundingBox.of(leftChest.block)
         box.expand(.1)
         val entities = leftChest.world.getNearbyEntities(box)
 
-        for (entity in entities) {
-            if(entity is ItemFrame) {
-                return entity.item
-            }
+        val frames = entities.filterIsInstance<ItemFrame>().map { frame -> frame.item }
+
+        if(frames.isNotEmpty()) {
+            return frames
         }
 
         return if(rightChest != null) {

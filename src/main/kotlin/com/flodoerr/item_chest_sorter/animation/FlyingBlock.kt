@@ -10,6 +10,9 @@ import org.bukkit.util.Vector
 import java.lang.IndexOutOfBoundsException
 
 
+// preventing to do too much animations
+var animating = false
+
 /**
  * animates an item from the sender chest to the target chest
  *
@@ -21,9 +24,6 @@ import java.lang.IndexOutOfBoundsException
  *
  * @author Flo Dörr (who does not like vectors at all)
  */
-// preventing to do too much animations
-var animating = false
-
 fun animateItem(item: ItemStack, start: Location, target: Location, plugin: JavaPlugin, count: Int) {
     for (i in 0.until(count)) {
         val armorLocation = start.clone()
@@ -69,8 +69,7 @@ fun animateItem(item: ItemStack, start: Location, target: Location, plugin: Java
         val distance = directionalVector.length()
 
         // launch the animation asynchronously
-        @Suppress("DEPRECATION")
-        val animate = Bukkit.getScheduler().scheduleAsyncRepeatingTask(plugin, FlyingBlock(stand, slowVector, period), delay.toLong(), period)
+        @Suppress("DEPRECATION") val animate = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, FlyingBlock(stand, slowVector, period), delay.toLong(), period)
 
         // get the animation duration this is the distance divided by the length of the "slower" normalized directional vector
         // and I add 6 because that looks better :P
@@ -79,7 +78,7 @@ fun animateItem(item: ItemStack, start: Location, target: Location, plugin: Java
         // stop th animation after the duration and delete the armor stand
         object : BukkitRunnable() {
             override fun run() {
-                Bukkit.getScheduler().cancelTask(animate)
+                animate.cancel()
                 stand.remove()
                 animating = false
             }
@@ -99,6 +98,6 @@ class FlyingBlock(private val stand: ArmorStand, private val normalizedVector: V
         // teleport to the new location
         try {
             stand.teleport(newLocation)
-        }catch (e: IndexOutOfBoundsException){ }
+        }catch (_: IndexOutOfBoundsException){ }
     }
 }

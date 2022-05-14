@@ -156,17 +156,17 @@ class ItemChestSorter: JavaPlugin() {
     /**
      * checks if both, the item in the chest and the item in the frame are in one set
      * @param itemInChest ItemStack in the chest
-     * @param itemInItemFrame ItemStack in the item frame
+     * @param itemInItemFrames ItemStack in the item frame
      * @return true if both items are in one set
      *
      * @author Flo Dörr
      * @author corylulu
      */
-    fun isItemInSet(itemInChest: ItemStack, itemInItemFrame: ItemStack): Boolean {
+    fun isItemInSet(itemInChest: ItemStack, itemInItemFrames: List<ItemStack>): Boolean {
         val sets = getSets()
 
         if(this.config.getBoolean("enableSetsRegex", false)) {
-            if(setsRegex.count() == 0){
+            if(setsRegex.isEmpty()){
                 // Keeps regex in buffer
                 setsRegex = ArrayList(sets.map {
                     set -> ArrayList(set.map {
@@ -177,11 +177,11 @@ class ItemChestSorter: JavaPlugin() {
             // returns the matching set
             return setsRegex.any { s ->
                 (s.any { p -> p.matches(itemInChest.type.key.key) }
-                && s.any { p -> p.matches(itemInItemFrame.type.key.key) })
+                && s.any { p -> itemInItemFrames.any { item -> p.matches(item.type.key.key) } })
             }
         }else{
             for (set in sets) {
-                if(set.contains(itemInChest.type.key.key) && set.contains(itemInItemFrame.type.key.key)) {
+                if(set.contains(itemInChest.type.key.key) && itemInItemFrames.any { item -> set.contains(item.type.key.key) }) {
                     return true
                 }
             }
