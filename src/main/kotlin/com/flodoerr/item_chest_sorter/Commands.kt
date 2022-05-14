@@ -20,6 +20,9 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
             sender.sendMessage("this commands can only be used in-game")
             return true
         }
+        if(args.isEmpty()) {
+            return false
+        }
         // switch block for the sub commands
         when (args[0].lowercase(Locale.getDefault())) {
             "add" -> {
