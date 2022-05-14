@@ -1,8 +1,6 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.command.Command
@@ -57,12 +55,10 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                         args[1].lowercase(Locale.getDefault()) == "sender" -> {
                             val permission = "ics.remove.sender"
                             if (sender.hasPermission(permission)) {
-                                runBlocking(Dispatchers.IO) {
-                                    if (db.removeSender(args[2])) {
-                                        sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
-                                    } else {
-                                        sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${args[2]}. This most likely means the id was not found.")
-                                    }
+                                if (db.removeSender(args[2])) {
+                                    sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
+                                } else {
+                                    sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${args[2]}. This most likely means the id was not found.")
                                 }
                             } else {
                                 showNoPermissionMessage(sender, permission)
@@ -73,12 +69,10 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                         args[1].lowercase(Locale.getDefault()) == "receiver" -> {
                             val permission = "ics.remove.receiver"
                             if (sender.hasPermission(permission)) {
-                                runBlocking(Dispatchers.IO) {
-                                    if (db.removeReceiver(args[2])) {
-                                        sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
-                                    } else {
-                                        sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${args[2]}. This most likely means the id was not found.")
-                                    }
+                                if (db.removeReceiver(args[2])) {
+                                    sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
+                                } else {
+                                    sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${args[2]}. This most likely means the id was not found.")
                                 }
                             } else {
                                 showNoPermissionMessage(sender, permission)
@@ -92,10 +86,8 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                 }
             }
             "reload" -> {
-                runBlocking {
-                    ics.reload()
-                    sender.sendMessage("${ChatColor.GREEN}Reload complete.")
-                }
+                ics.reload()
+                sender.sendMessage("${ChatColor.GREEN}Reload complete.")
                 return true
             }
             else -> return false
