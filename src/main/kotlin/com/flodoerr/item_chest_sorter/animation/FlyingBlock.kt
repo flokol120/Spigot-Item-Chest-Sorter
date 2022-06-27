@@ -69,7 +69,7 @@ fun animateItem(item: ItemStack, start: Location, target: Location, plugin: Java
         val distance = directionalVector.length()
 
         // launch the animation asynchronously
-        @Suppress("DEPRECATION") val animate = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, FlyingBlock(stand, slowVector, period), delay.toLong(), period)
+        val animate = FlyingBlock(stand, slowVector, period).runTaskTimerAsynchronously(plugin, delay.toLong(), period)
 
         // get the animation duration this is the distance divided by the length of the "slower" normalized directional vector
         // and I add 6 because that looks better :P

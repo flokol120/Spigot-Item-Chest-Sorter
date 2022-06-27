@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.flodoerr'
-version '1.13.0'
+version '1.14.0'
 
 sourceCompatibility = 1.8
 
@@ -26,14 +26,14 @@ repositories {
 
 dependencies {
     implementation 'com.beust:klaxon:5.5'
-    compileOnly 'org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:1.19-R0.1-SNAPSHOT'
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "12"
+    kotlinOptions.jvmTarget = "16"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "12"
+    kotlinOptions.jvmTarget = "16"
 }
 
 jar {
