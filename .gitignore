@@ -25,10 +25,12 @@ hs_err_pid*
 # build folder
 build/
 dist/
+bin/
 
 # gradle
 .gradle/
 !gradle-wrapper.jar
+gradle.properties
 
 # idea
 .idea/

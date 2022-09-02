@@ -1,21 +1,15 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
-import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import org.bukkit.permissions.Permission
 import java.util.*
 
 
@@ -25,6 +19,9 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
         if (sender is ConsoleCommandSender) {
             sender.sendMessage("this commands can only be used in-game")
             return true
+        }
+        if(args.isEmpty()) {
+            return false
         }
         // switch block for the sub commands
         when (args[0].lowercase(Locale.getDefault())) {
@@ -61,12 +58,11 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                         args[1].lowercase(Locale.getDefault()) == "sender" -> {
                             val permission = "ics.remove.sender"
                             if (sender.hasPermission(permission)) {
-                                GlobalScope.launch(Dispatchers.IO) {
-                                    if (db.removeSender(args[2])) {
-                                        sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
-                                    } else {
-                                        sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${args[2]}. This most likely means the id was not found.")
-                                    }
+                                if (db.removeSender(args[2])) {
+                                    currentSender[(sender as Player).uniqueId.toString()] = null
+                                    sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
+                                } else {
+                                    sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${args[2]}. This most likely means the id was not found.")
                                 }
                             } else {
                                 showNoPermissionMessage(sender, permission)
@@ -77,12 +73,10 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                         args[1].lowercase(Locale.getDefault()) == "receiver" -> {
                             val permission = "ics.remove.receiver"
                             if (sender.hasPermission(permission)) {
-                                GlobalScope.launch(Dispatchers.IO) {
-                                    if (db.removeReceiver(args[2])) {
-                                        sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
-                                    } else {
-                                        sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${args[2]}. This most likely means the id was not found.")
-                                    }
+                                if (db.removeReceiver(args[2])) {
+                                    sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
+                                } else {
+                                    sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${args[2]}. This most likely means the id was not found.")
                                 }
                             } else {
                                 showNoPermissionMessage(sender, permission)
@@ -96,10 +90,8 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                 }
             }
             "reload" -> {
-                runBlocking {
-                    ics.reload()
-                    sender.sendMessage("${ChatColor.GREEN}Reload complete.")
-                }
+                ics.reload()
+                sender.sendMessage("${ChatColor.GREEN}Reload complete.")
                 return true
             }
             else -> return false
@@ -107,7 +99,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
     }
 
     /**
-     * determines which tool to send to the CommanSender
+     * determines which tool to send to the CommandSender
      * @param args arguments
      * @param sender command issuer
      * @return true if valid command was passed

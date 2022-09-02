@@ -1,8 +1,6 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import org.bukkit.event.HandlerList
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.inventory.InventoryMoveItemEvent
@@ -34,13 +32,11 @@ class ItemChestSorter: JavaPlugin() {
             if(performanceMode) {
                 saveInterval = config.getInt("autoSaveInterval", 5) * 60L * 1000L
                 timer = fixedRateTimer("automaticSave", false, saveInterval, saveInterval) {
-                    runBlocking { db.saveJSON() }
+                    db.saveJSON()
                 }
             }
 
-            runBlocking {
-                db.migrateMissingWorldNamesJSON(server.worlds[0].uid.toString())
-            }
+            db.migrateMissingWorldNamesJSON(server.worlds[0].uid.toString())
 
             registerCommands()
 
@@ -58,7 +54,7 @@ class ItemChestSorter: JavaPlugin() {
         server.consoleSender.sendMessage("Item-Chest-Sorter config reloaded.")
     }
 
-    suspend fun reload() {
+    fun reload() {
         if(db.saveJSON()) {
             server.consoleSender.sendMessage("Item-Chest-Sorter successfully saved its database")
             HandlerList.unregisterAll(this)
@@ -71,12 +67,10 @@ class ItemChestSorter: JavaPlugin() {
     }
 
     override fun onDisable() {
-        runBlocking(Dispatchers.IO) {
-            if(db.saveJSON()) {
-                server.consoleSender.sendMessage("Item-Chest-Sorter successfully saved its database before shutdown")
-            }else{
-                server.consoleSender.sendMessage("Item-Chest-Sorter DID NOT successfully save its database before shutdown")
-            }
+        if(db.saveJSON()) {
+            server.consoleSender.sendMessage("Item-Chest-Sorter successfully saved its database before shutdown")
+        }else{
+            server.consoleSender.sendMessage("Item-Chest-Sorter DID NOT successfully save its database before shutdown")
         }
         if(timer != null) {
             timer!!.cancel()
@@ -162,17 +156,17 @@ class ItemChestSorter: JavaPlugin() {
     /**
      * checks if both, the item in the chest and the item in the frame are in one set
      * @param itemInChest ItemStack in the chest
-     * @param itemInItemFrame ItemStack in the item frame
+     * @param itemInItemFrames ItemStack in the item frame
      * @return true if both items are in one set
      *
      * @author Flo Dörr
      * @author corylulu
      */
-    fun isItemInSet(itemInChest: ItemStack, itemInItemFrame: ItemStack): Boolean {
+    fun isItemInSet(itemInChest: ItemStack, itemInItemFrames: List<ItemStack>): Boolean {
         val sets = getSets()
 
         if(this.config.getBoolean("enableSetsRegex", false)) {
-            if(setsRegex.count() == 0){
+            if(setsRegex.isEmpty()){
                 // Keeps regex in buffer
                 setsRegex = ArrayList(sets.map {
                     set -> ArrayList(set.map {
@@ -183,11 +177,11 @@ class ItemChestSorter: JavaPlugin() {
             // returns the matching set
             return setsRegex.any { s ->
                 (s.any { p -> p.matches(itemInChest.type.key.key) }
-                && s.any { p -> p.matches(itemInItemFrame.type.key.key) })
+                && s.any { p -> itemInItemFrames.any { item -> p.matches(item.type.key.key) } })
             }
         }else{
             for (set in sets) {
-                if(set.contains(itemInChest.type.key.key) && set.contains(itemInItemFrame.type.key.key)) {
+                if(set.contains(itemInChest.type.key.key) && itemInItemFrames.any { item -> set.contains(item.type.key.key) }) {
                     return true
                 }
             }

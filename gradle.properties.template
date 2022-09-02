@@ -1,0 +1,3 @@
+kotlin.code.style=official
+# e.g. path to your servers plugin folder
+jarOutput=<path>

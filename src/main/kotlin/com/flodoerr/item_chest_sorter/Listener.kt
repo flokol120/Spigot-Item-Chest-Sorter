@@ -3,7 +3,6 @@ package com.flodoerr.item_chest_sorter
 import com.flodoerr.item_chest_sorter.animation.animateItem
 import com.flodoerr.item_chest_sorter.animation.animating
 import com.flodoerr.item_chest_sorter.json.*
-import kotlinx.coroutines.runBlocking
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.*
@@ -27,12 +26,13 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.BoundingBox
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.schedule
 
 
+var currentSender: HashMap<String, String?> = HashMap()
 class Listener(private val db: JsonHelper, private val main: ItemChestSorter): Listener {
-
-    private var currentSender: HashMap<String, String> = HashMap()
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onPlayerInteractEvent(e: PlayerInteractEvent) {
@@ -52,14 +52,10 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
 
                         if(fireLevel == 65535 && displayName == SENDER_HOE_NAME) {
                             e.isCancelled = true
-                            runBlocking {
-                                handleSenderHoe(e.player, block)
-                            }
+                            handleSenderHoe(e.player, block)
                         }else if(arrowLevel == 65535 && displayName == RECEIVER_HOE_NAME) {
                             e.isCancelled = true
-                            runBlocking {
-                                handleReceiverHoe(e.player, block)
-                            }
+                            handleReceiverHoe(e.player, block)
                         }
                     }else{
                         if(main.config.getBoolean("chatMessages.disabledShulkerBoxes", true)) {
@@ -69,9 +65,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                     }
                 }else{
                     e.isCancelled = true
-                    runBlocking {
-                        showSetup(e.player)
-                    }
+                    showSetup(e.player)
                 }
             }
         }
@@ -79,59 +73,53 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onInventoryCloseEvent(e: InventoryCloseEvent) {
-        runBlocking {
-            checkInventory(e.inventory, e.player)
-        }
+        checkInventory(e.inventory, e.player)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onInventoryMoveItemEvent(e: InventoryMoveItemEvent) {
-        runBlocking {
-            if(e.destination.type == InventoryType.CHEST && (e.source.type == InventoryType.HOPPER || e.source.type == InventoryType.CHEST)) {
-                if(main.config.getBoolean("sendFromHopperOrSenderNoEmptySlot", false)) {
-                    for (stack in e.destination.contents) {
-                        if (stack == null) {
-                            return@runBlocking
-                        }
+        if(e.destination.type == InventoryType.CHEST && (e.source.type == InventoryType.HOPPER || e.source.type == InventoryType.CHEST)) {
+            if(main.config.getBoolean("sendFromHopperOrSenderNoEmptySlot", false)) {
+                for (stack in e.destination.contents) {
+                    if (stack == null) {
+                        return
                     }
-                    checkInventory(e.destination, null)
-                    return@runBlocking
                 }
-                checkInventory(e.destination, null, e.item)
+                checkInventory(e.destination, null)
+                return
             }
+            checkInventory(e.destination, null, e.item)
         }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onBlockBreakEvent(e: BlockBreakEvent) {
-        runBlocking {
-            if(db.chestExists(locationToCords(e.block.location))) {
-                e.isCancelled = true
+        if(db.chestExists(locationToCords(e.block.location))) {
+            e.isCancelled = true
 
-                if(main.config.getBoolean("chatMessages.breakingChests", true)) {
-                    // some ugly chat message :( ...
-                    val m1 = TextComponent("This chest is either a sender or a receiver. Remove it using ")
-                    m1.color = net.md_5.bungee.api.ChatColor.RED
-                    val m2 = TextComponent("/ics remove sender")
-                    m2.isItalic = true
-                    m2.color = net.md_5.bungee.api.ChatColor.GRAY
-                    m2.isUnderlined = true
-                    m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender")
-                    val m3 = TextComponent(" or ")
-                    m3.color = net.md_5.bungee.api.ChatColor.RED
-                    val m4 = TextComponent("/ics remove receiver")
-                    m4.isItalic = true
-                    m4.color = net.md_5.bungee.api.ChatColor.GRAY
-                    m4.isUnderlined = true
-                    m4.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove receiver")
-                    val m5 = TextComponent(" before breaking it.")
-                    m5.color = net.md_5.bungee.api.ChatColor.RED
-                    m1.addExtra(m2)
-                    m1.addExtra(m3)
-                    m1.addExtra(m4)
-                    m1.addExtra(m5)
-                    e.player.spigot().sendMessage(m1)
-                }
+            if(main.config.getBoolean("chatMessages.breakingChests", true)) {
+                // some ugly chat message :( ...
+                val m1 = TextComponent("This chest is either a sender or a receiver. Remove it using ")
+                m1.color = net.md_5.bungee.api.ChatColor.RED
+                val m2 = TextComponent("/ics remove sender")
+                m2.isItalic = true
+                m2.color = net.md_5.bungee.api.ChatColor.GRAY
+                m2.isUnderlined = true
+                m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender")
+                val m3 = TextComponent(" or ")
+                m3.color = net.md_5.bungee.api.ChatColor.RED
+                val m4 = TextComponent("/ics remove receiver")
+                m4.isItalic = true
+                m4.color = net.md_5.bungee.api.ChatColor.GRAY
+                m4.isUnderlined = true
+                m4.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove receiver")
+                val m5 = TextComponent(" before breaking it.")
+                m5.color = net.md_5.bungee.api.ChatColor.RED
+                m1.addExtra(m2)
+                m1.addExtra(m3)
+                m1.addExtra(m4)
+                m1.addExtra(m5)
+                e.player.spigot().sendMessage(m1)
             }
         }
     }
@@ -147,7 +135,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      *
      * @author Flo Dörr
      */
-    private suspend fun checkInventory(inventory: Inventory, player: HumanEntity? = null, itemStack: ItemStack? = null) {
+    private fun checkInventory(inventory: Inventory, player: HumanEntity? = null, itemStack: ItemStack? = null) {
         if(inventory.location != null) {
             // get the sender by the inventory location
             val sender = db.getSenderByCords(locationToCords(inventory.location!!))
@@ -159,7 +147,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                     val contents: Array<ItemStack?> = inventory.contents
                     if(contents.isNotEmpty()) {
                         val permission = "ics.use.sender"
-                        if(player != null && contents.isNotEmpty() && !player.hasPermission(permission)){
+                        if(player != null && !player.hasPermission(permission)){
                             showNoPermissionMessage(player, permission)
                             return
                         }
@@ -167,18 +155,17 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         val receivers = sender.receiver
 
                         if(receivers.size > 0) {
-                            val airReceiver = ArrayList<HashMap<String, Any?>>()
-                            val realReceiver = ArrayList<HashMap<String, Any?>>()
+                            val airReceiver = ArrayList<Pair<Container, List<ItemStack>?>>()
+                            val realReceiver = ArrayList<Pair<Container, List<ItemStack>?>>()
 
                             // overwriting the animate all setting if too many items are about to be sent, as this can
                             // potentially crash the server!!
                             val overwriteAnimation = if(main.config.getBoolean("animation.animateAll", false)) {
-                                var items = 0
-                                for (content in contents){
-                                    if (content != null && !content.type.isAir) {
-                                        items += content.amount
+                                val items = contents.filter { content -> content != null && !content.type.isAir }
+                                    .sumOf { content ->
+                                        content?.amount
+                                            ?: 0
                                     }
-                                }
                                 items >= (64 * 2)
                             }else{
                                 false
@@ -196,13 +183,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                                     null
                                 }
                                 // get block in item frame on chest
-                                val block = getItemFromItemFrameNearChest(leftChest, rightChest)
+                                val blocks = getItemFromItemFrameNearChest(leftChest, rightChest)
                                 // check if no item frame is placed and give hint to user
-                                if (block != null) {
-                                    val map = HashMap<String, Any?>()
-                                    map["leftChest"] = leftChest
-                                    map["block"] = block
-                                    if(!block.type.isAir) {
+                                if (blocks != null) {
+                                    val map = Pair(leftChest, blocks)
+                                    if(!blocks.stream().anyMatch { stack -> stack.type.isAir }) {
                                         realReceiver.add(map)
                                     }else{
                                         airReceiver.add(map)
@@ -251,11 +236,9 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                             if(leftOverContent.size > 0 && airReceiver.size > 0) {
                                 // sort items into "air chests"
                                 var sendMessage = false
-                                for (leftOver in leftOverContent) {
-                                    if(leftOver != null && !leftOver.type.isAir) {
-                                        sendMessage = true
-                                        handleItems(leftOver, player, inventory, airReceiver, itemStack != null, overwriteAnimation)
-                                    }
+                                leftOverContent.filter { left -> left != null && !left.type.isAir }.forEach { left ->
+                                    sendMessage = true
+                                    handleItems(left, player, inventory, airReceiver, itemStack != null, overwriteAnimation)
                                 }
                                 if(sendMessage && main.config.getBoolean("chatMessages.sortinToAirChest", true)) {
                                     // only send a message to the player if there is more than air in the chest
@@ -310,16 +293,16 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      * @author Flo Dörr
      */
     private fun handleItems(content: ItemStack?, player: HumanEntity?, inventory: Inventory,
-                            receivers: ArrayList<HashMap<String, Any?>>, workaround: Boolean = false, overwriteAnimation: Boolean): ItemStack? {
+                            receivers: ArrayList<Pair<Container, List<ItemStack>?>>, workaround: Boolean = false, overwriteAnimation: Boolean): ItemStack? {
         var notFound: ItemStack? = null
         if(content != null && content.amount > 0 && !content.type.isAir) {
             for (receiver in receivers) {
-                val block = receiver["block"] as ItemStack?
+                val blocks = receiver.second
                 // First check if block == null or the bloc is air, if that is the case we have found an air chest
                 // check if item in chest and item on frame are the same
                 // check if we have an item set defined in the config.yml matching the item in the frame and in the sender chest
-                if((block == null || block.type.isAir) || block.type == content.type || main.isItemInSet(content, block)) {
-                    val leftChest = receiver["leftChest"] as Container
+                if((blocks == null || blocks.stream().anyMatch { block -> block.type.isAir }) || blocks.any { block -> block.type == content.type } || main.isItemInSet(content, blocks)) {
+                    val leftChest = receiver.first
                     if(leftChest.inventory.type === InventoryType.SHULKER_BOX && !main.config.getBoolean("allowShulkerBoxes", false)) {
                         if(main.config.getBoolean("chatMessages.disabledShulkerBoxes", true)) {
                             player?.sendMessage("${ChatColor.YELLOW}Shulker Boxes are not allowed on this server")
@@ -431,17 +414,9 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             timer!!.schedule(500) {
                 if(!moving) {
                     if(inv is Chest) {
-                        for (item in inv.blockInventory) {
-                            if (content.isSimilar(item)) {
-                                inv.blockInventory.removeItem(content)
-                            }
-                        }
+                        inv.blockInventory.filter { item -> content.isSimilar(item) }.forEach { _ -> inv.blockInventory.removeItem(content) }
                     } else {
-                        for (item in inv.inventory) {
-                            if (content.isSimilar(item)) {
-                                inv.inventory.removeItem(content)
-                            }
-                        }
+                        inv.inventory.filter { item -> content.isSimilar(item) }.forEach { _ -> inv.inventory.removeItem(content) }
                     }
                     cancel()
                 }else{
@@ -495,16 +470,22 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      * @param rightChest right chest of a double chest. If this is no double chest. right chest is null
      * @return ItemStack with the item in the item frame. Can be null if no item frame can be found
      */
-    private fun getItemFromItemFrameNearChest(leftChest: Container, rightChest: Container?): ItemStack? {
+    private fun getItemFromItemFrameNearChest(leftChest: Container, rightChest: Container?): List<ItemStack>? {
+        if(!leftChest.chunk.isLoaded) {
+            if(!leftChest.chunk.load()) {
+                println("chunk of left chest could not be loaded")
+            }
+        }
+
         // get BoundingBox of chest and expand it by .1 to find the item frame
         val box = BoundingBox.of(leftChest.block)
         box.expand(.1)
         val entities = leftChest.world.getNearbyEntities(box)
 
-        for (entity in entities) {
-            if(entity is ItemFrame) {
-                return entity.item
-            }
+        val frames = entities.filterIsInstance<ItemFrame>().map { frame -> frame.item }
+
+        if(frames.isNotEmpty()) {
+            return frames
         }
 
         return if(rightChest != null) {
@@ -564,7 +545,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      *
      * @author Flo Dörr
      */
-    private suspend fun handleSenderHoe(player: Player, block: Block) {
+    private fun handleSenderHoe(player: Player, block: Block) {
         val existingSender = db.getSenderByCords(locationToCords(block.location))
         if(existingSender != null) {
             val permission = "ics.select.sender"
@@ -616,7 +597,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
      *
      * @author Flo Dörr
      */
-    private suspend fun handleReceiverHoe(player: Player, block: Block) {
+    private fun handleReceiverHoe(player: Player, block: Block) {
         if(currentSender[player.uniqueId.toString()] != null) {
             val chestLocation = getChestLocation((block.state as Container).inventory)
             val existingChest = db.getSavedChestFromCords(chestLocation.left)
@@ -693,14 +674,12 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             }
         }else{
             showNoSelectedSenderMessage(player) {
-                runBlocking {
-                    handleReceiverHoe(player, block)
-                }
+                handleReceiverHoe(player, block)
             }
         }
     }
 
-    private suspend fun isAbleToCreateNewChest(player: Player): Boolean {
+    private fun isAbleToCreateNewChest(player: Player): Boolean {
         val ableToPlace = getPlayerMaxChestCount(player)
         return ableToPlace == -1 || db.getChestCountByPlayer(player.uniqueId.toString()) < ableToPlace
     }
@@ -722,7 +701,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         return ableToPlace
     }
 
-    private suspend fun showSetup(player: Player) {
+    private fun showSetup(player: Player) {
         val permission = "ics.show.setup"
         if(!player.hasPermission(permission)){
             showNoPermissionMessage(player, permission)
@@ -741,15 +720,23 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             }
         }else{
             showNoSelectedSenderMessage(player) {
-                runBlocking {
-                    showSetup(player)
-                }
+                showSetup(player)
             }
         }
     }
 
     private fun showParticle(location: Location, world: World) {
-        world.spawnParticle(Particle.BARRIER, location, 1)
+        location.x += 1
+        location.z += 1
+        location.y -= .5
+        var counter = 0
+        fixedRateTimer("particleTimer", false, 0L, 250L) {
+            if(counter > 20) {
+                cancel()
+            }
+            world.spawnParticle(Particle.GLOW, location, 50)
+            counter++
+        }
     }
 
     private fun getIndicationLocation(cords: ChestLocation, world: World): Location{
@@ -784,7 +771,7 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
         return finalLocation
     }
 
-    private suspend fun showNoSelectedSenderMessage(player: Player, callback: () -> Unit) {
+    private fun showNoSelectedSenderMessage(player: Player, callback: () -> Unit) {
         val sender = db.getSender()
         if(sender.size == 1) {
             currentSender[player.uniqueId.toString()] = sender[0].sid

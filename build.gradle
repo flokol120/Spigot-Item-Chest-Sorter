@@ -1,10 +1,10 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.5.21'
+    id 'org.jetbrains.kotlin.jvm' version '1.6.0'
 }
 
 group 'com.flodoerr'
-version '1.0'
+version '1.14.0'
 
 sourceCompatibility = 1.8
 
@@ -25,16 +25,40 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21'
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.21'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1-native-mt'
     implementation 'com.beust:klaxon:5.5'
-    compileOnly 'org.spigotmc:spigot-api:1.17-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:1.19-R0.1-SNAPSHOT'
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "12"
+    kotlinOptions.jvmTarget = "16"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "12"
+    kotlinOptions.jvmTarget = "16"
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes(
+                'Main-Class': 'com.flodoerr.item_chest_sorter.ItemChestSorter'
+        )
+    }
+    from('src/main') {
+        include '*.yml'
+    }
+    baseName = 'ItemChestSorter'
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+            {
+                exclude "META-INF/*.SF"
+                exclude "META-INF/*.DSA"
+                exclude "META-INF/*.RSA"
+            }
+    destinationDirectory.set(file(jarOutput))
+}
+
+task releaseJar(type: Jar) {
+    destinationDirectory.set(file(buildDir))
+    with jar
 }

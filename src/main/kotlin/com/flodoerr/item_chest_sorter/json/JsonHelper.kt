@@ -1,16 +1,12 @@
 package com.flodoerr.item_chest_sorter.json
 
 import com.beust.klaxon.Klaxon
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.bukkit.World
 import org.bukkit.command.ConsoleCommandSender
 import java.io.File
 import java.nio.file.Paths
-import java.util.*
 import kotlin.collections.ArrayList
 
-class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSender? = null, private val performanceMode: Boolean) {
+class JsonHelper(dataFolder: File, commandSender: ConsoleCommandSender? = null, private val performanceMode: Boolean) {
 
     private val jsonFile = Paths.get(dataFolder.absolutePath, "chests.json").toFile()
     private val doNotTouchFile = Paths.get(dataFolder.absolutePath, "README (don't touch the json file if you don't know what you are doing)").toFile()
@@ -35,7 +31,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun addSender(sender: Sender): Boolean {
+    fun addSender(sender: Sender): Boolean {
         val json = getJSON()
         for (jsonSender in json.sender) {
             if(jsonSender.sid == sender.sid){
@@ -54,7 +50,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun removeSender(sender: Sender): Boolean {
+    fun removeSender(sender: Sender): Boolean {
         return removeSender(sender.sid)
     }
 
@@ -65,7 +61,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun removeSender(sid: String): Boolean {
+    fun removeSender(sid: String): Boolean {
         val json = getJSON()
         for (sender in json.sender){
             if(sid == sender.sid) {
@@ -84,7 +80,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun getSenderById(sid: String): Sender? {
+    fun getSenderById(sid: String): Sender? {
         val json = getJSON()
         for (sender in json.sender) {
             if(sender.sid == sid) {
@@ -101,7 +97,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun getSenderByCords(cords: Cords): Sender? {
+    fun getSenderByCords(cords: Cords): Sender? {
         val json = getJSON()
         for (sender in json.sender) {
             if(sender.cords.left == cords || sender.cords.right == cords) {
@@ -118,7 +114,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun chestExists(cords: Cords): Boolean {
+    fun chestExists(cords: Cords): Boolean {
         val json = getJSON()
         for (sender in json.sender) {
             for (receiver in sender.receiver) {
@@ -139,7 +135,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun getSender(): ArrayList<Sender> {
+    fun getSender(): ArrayList<Sender> {
         return getJSON().sender
     }
 
@@ -151,7 +147,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun addReceiverToSender(receiver: Receiver, sender: Sender): Boolean {
+    fun addReceiverToSender(receiver: Receiver, sender: Sender): Boolean {
         return addReceiverToSender(receiver, sender.sid)
     }
 
@@ -163,7 +159,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun addReceiverToSender(receiver: Receiver, sid: String): Boolean {
+    fun addReceiverToSender(receiver: Receiver, sid: String): Boolean {
         val json = getJSON()
         for (jsonSender in json.sender) {
             if(jsonSender.sid == sid) {
@@ -187,7 +183,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun removeReceiver(receiver: Receiver): Boolean {
+    fun removeReceiver(receiver: Receiver): Boolean {
         return removeReceiver(receiver.rid)
     }
 
@@ -198,7 +194,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun removeReceiver(rid: String): Boolean {
+    fun removeReceiver(rid: String): Boolean {
         val json = getJSON()
         for (sender in json.sender) {
             for (receiver in sender.receiver) {
@@ -219,7 +215,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun getReceiverFromSender(sender: Sender): ArrayList<Receiver>? {
+    fun getReceiverFromSender(sender: Sender): ArrayList<Receiver>? {
         return getReceiverFromSender(sender.sid)
     }
 
@@ -230,7 +226,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun getReceiverFromSender(sid: String): ArrayList<Receiver>? {
+    fun getReceiverFromSender(sid: String): ArrayList<Receiver>? {
         val sender = getSenderById(sid) ?: return null
         return sender.receiver
     }
@@ -242,7 +238,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun getSavedChestFromCords(cords: Cords): Pair<Sender?, Receiver?>? {
+    fun getSavedChestFromCords(cords: Cords): Pair<Sender?, Receiver?>? {
         val json = getJSON()
         val receivers = ArrayList<Receiver>()
         // first go through sender because it could be potentially faster
@@ -267,12 +263,11 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    private suspend fun getJSON(): JSON {
-        return cachedJSON
-            ?: withContext(Dispatchers.IO) {
-                cachedJSON = Klaxon().parse<JSON>(jsonFile.readText())!!
-                return@withContext cachedJSON!!
-            }
+    private fun getJSON(): JSON {
+        if(cachedJSON == null) {
+            cachedJSON = Klaxon().parse<JSON>(jsonFile.readText())!!
+        }
+        return cachedJSON as JSON
     }
 
     /**
@@ -282,11 +277,11 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    private suspend fun saveJSONIfNecessary(json: JSON): Boolean {
+    private fun saveJSONIfNecessary(json: JSON): Boolean {
         if(performanceMode) {
             return false
         }
-        return saveJSON(json);
+        return saveJSON(json)
     }
 
     /**
@@ -296,15 +291,18 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    private suspend fun saveJSON(json: JSON): Boolean {
-        return withContext(Dispatchers.IO) {
+    private fun saveJSON(json: JSON): Boolean {
+        return try {
             jsonFile.writeText(
                 Klaxon().toJsonString(
                     json
                 )
             )
             cachedJSON = json
-            return@withContext true
+            true
+        }catch (exception: Exception) {
+            println(exception)
+            false
         }
     }
 
@@ -314,7 +312,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun saveJSON(): Boolean {
+    fun saveJSON(): Boolean {
         if (cachedJSON == null) {
             return false
         }
@@ -327,7 +325,7 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun migrateMissingWorldNamesJSON(defaultWorld: String) {
+    fun migrateMissingWorldNamesJSON(defaultWorld: String) {
         val json: JSON = getJSON()
         for (sender in json.sender){
             if(sender.cords.left.world == null){
@@ -350,19 +348,11 @@ class JsonHelper(dataFolder: File, private val commandSender: ConsoleCommandSend
      *
      * @author Flo Dörr
      */
-    suspend fun getChestCountByPlayer(playerUUID: String): Int {
-        var count = 0
-        val json: JSON = getJSON()
-        for(sender in json.sender) {
-            if(sender.playerID == playerUUID) {
-                count++
+    fun getChestCountByPlayer(playerUUID: String): Int {
+        return getJSON().sender
+            .filter { sender -> sender.playerID == playerUUID }
+            .sumOf { sender -> 1 + sender.receiver
+                .count { receiver -> receiver.playerID == playerUUID }
             }
-            for (receiver in sender.receiver) {
-                if (receiver.playerID == playerUUID) {
-                    count++
-                }
-            }
-        }
-        return count
     }
 }
