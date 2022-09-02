@@ -28,7 +28,6 @@ dist/
 
 # gradle
 .gradle/
-gradlew*
 !gradle-wrapper.jar
 
 # idea
