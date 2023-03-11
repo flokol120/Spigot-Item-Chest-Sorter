@@ -11,6 +11,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import java.util.*
+import java.net.URLDecoder
 
 
 class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): CommandExecutor {
@@ -58,11 +59,12 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                         args[1].lowercase(Locale.getDefault()) == "sender" -> {
                             val permission = "ics.remove.sender"
                             if (sender.hasPermission(permission)) {
-                                if (db.removeSender(args[2])) {
+                                val target = URLDecoder.decode(args[2], "UTF-8")
+                                if (db.removeSender(target)) {
                                     currentSender[(sender as Player).uniqueId.toString()] = null
                                     sender.sendMessage("${ChatColor.GREEN}Successfully deleted the sender chest.")
                                 } else {
-                                    sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${args[2]}. This most likely means the id was not found.")
+                                    sender.sendMessage("${ChatColor.RED}Error while deleting the sender chest with id ${target}. This most likely means the id was not found.")
                                 }
                             } else {
                                 showNoPermissionMessage(sender, permission)
@@ -73,10 +75,11 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                         args[1].lowercase(Locale.getDefault()) == "receiver" -> {
                             val permission = "ics.remove.receiver"
                             if (sender.hasPermission(permission)) {
-                                if (db.removeReceiver(args[2])) {
+                                val target = URLDecoder.decode(args[2], "UTF-8")
+                                if (db.removeReceiver(target)) {
                                     sender.sendMessage("${ChatColor.GREEN}Successfully deleted the receiver chest.")
                                 } else {
-                                    sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${args[2]}. This most likely means the id was not found.")
+                                    sender.sendMessage("${ChatColor.RED}Error while deleting the receiver chest with id ${target}. This most likely means the id was not found.")
                                 }
                             } else {
                                 showNoPermissionMessage(sender, permission)

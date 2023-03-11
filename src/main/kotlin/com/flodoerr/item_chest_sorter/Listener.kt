@@ -26,6 +26,7 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.BoundingBox
 import java.util.*
+import java.net.URLEncoder
 import kotlin.collections.ArrayList
 import kotlin.concurrent.fixedRateTimer
 import kotlin.concurrent.schedule
@@ -561,7 +562,8 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
             val message = TextComponent("delete")
             message.color = net.md_5.bungee.api.ChatColor.RED
             message.isUnderlined = true
-            message.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${existingSender.sid}")
+            val encodedSid = URLEncoder.encode(existingSender.sid, "UTF-8")
+            message.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${encodedSid}")
             player.spigot().sendMessage(message)
         }else{
             val permission = "ics.create.sender"
@@ -647,7 +649,8 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         val m2 = TextComponent("click here.")
                         m2.color = net.md_5.bungee.api.ChatColor.RED
                         m2.isUnderlined = true
-                        m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${existingChest.first!!.sid}")
+                        var encodedSid = URLEncoder.encode(existingChest.first!!.sid, "UTF-8")
+                        m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove sender ${encodedSid}")
                         val m3 = TextComponent(" Warning! Deleting a sender chest will also delete all its receivers!")
                         m3.color = net.md_5.bungee.api.ChatColor.RED
                         m1.addExtra(m2)
@@ -666,7 +669,8 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                         val m2 = TextComponent("click here.")
                         m2.color = net.md_5.bungee.api.ChatColor.RED
                         m2.isUnderlined = true
-                        m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove receiver ${existingChest.second!!.rid}")
+                        var encodedRid = URLEncoder.encode(existingChest.second!!.rid, "UTF-8")
+                        m2.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ics remove receiver ${encodedRid}")
                         m1.addExtra(m2)
                         player.spigot().sendMessage(m1)
                     }
