@@ -55,7 +55,7 @@ jar {
                 exclude "META-INF/*.DSA"
                 exclude "META-INF/*.RSA"
             }
-    destinationDirectory.set(file(jarOutput))
+    destinationDirectory.set(file(hasProperty('jarOutput') ? jarOutput : "."))
 }
 
 task releaseJar(type: Jar) {
