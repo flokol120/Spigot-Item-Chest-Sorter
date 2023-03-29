@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.flodoerr'
-version '1.14.0'
+version '1.14.1'
 
 sourceCompatibility = 1.8
 
@@ -60,5 +60,6 @@ jar {
 
 task releaseJar(type: Jar) {
     destinationDirectory.set(file(buildDir))
+    baseName = 'ItemChestSorter'
     with jar
 }
