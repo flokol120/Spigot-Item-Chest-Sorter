@@ -198,6 +198,8 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
                                         val message = "${ChatColor.YELLOW}There is a receiver chest which has no item frame on it. Please put an item frame on a receiver chest, containing the target item/block. You can also leave the item frame empty to accept all items which could not be sorted."
                                         if(player != null) {
                                             player.sendMessage(message)
+                                            showParticle(getIndicationLocation(receiver.cords, player.world), player.world)
+
                                         }else{
                                             main.server.consoleSender.sendMessage(message)
                                         }
