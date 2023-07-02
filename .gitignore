@@ -34,3 +34,6 @@ gradle.properties
 
 # idea
 .idea/
+
+# server
+server/
