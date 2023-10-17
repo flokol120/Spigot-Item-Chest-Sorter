@@ -174,6 +174,11 @@ class Listener(private val db: JsonHelper, private val main: ItemChestSorter): L
 
                             for (receiver in receivers) {
                                 val leftLocation = cordsToLocation(receiver.cords.left)
+                                val leftBlock = leftLocation.world!!.getBlockAt(leftLocation)
+                                if(leftBlock.state !is Container) {
+                                    player?.server?.consoleSender?.sendMessage("ERROR: Could not find Chest at ${receiver.cords.left} with id: ${receiver.rid}")
+                                    continue
+                                }
                                 val leftChest = leftLocation.world!!.getBlockAt(leftLocation).state as Container
                                 // get right chest if cords not null
                                 val rightChest = if(receiver.cords.right != null) {
