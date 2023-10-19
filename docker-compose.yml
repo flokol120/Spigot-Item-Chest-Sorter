@@ -9,7 +9,7 @@ services:
       PAPERMC_FLAGS: ""
     volumes:
       - "./server:/data:rw"
-      - "./build/ItemChestSorter-1.14.3.jar:/data/plugins/ItemChestSorter.jar:ro"
+      - "./build/ItemChestSorter-1.14.4.jar:/data/plugins/ItemChestSorter.jar:ro"
     ports:
       - "25565:25565"
     # The following allow `docker attach mcserver` to work

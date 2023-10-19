@@ -2,7 +2,6 @@ package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
 import org.bukkit.event.HandlerList
-import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
@@ -12,24 +11,24 @@ import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.concurrent.fixedRateTimer
 
-class ItemChestSorter: JavaPlugin() {
+class ItemChestSorter : JavaPlugin() {
 
     private var saveInterval = 0L
     private var timer: Timer? = null
 
     private lateinit var db: JsonHelper
     private var setsRegex = ArrayList<ArrayList<Regex>>()
-    
+
     override fun onEnable() {
         super.onEnable()
 
         createConfig()
 
-        if(this.config.getBoolean("enabled")) {
+        if (this.config.getBoolean("enabled")) {
             val performanceMode = config.getBoolean("performance", false)
             db = JsonHelper(dataFolder, server.consoleSender, performanceMode = performanceMode)
 
-            if(performanceMode) {
+            if (performanceMode) {
                 saveInterval = config.getInt("autoSaveInterval", 5) * 60L * 1000L
                 timer = fixedRateTimer("automaticSave", false, saveInterval, saveInterval) {
                     db.saveJSON()
@@ -43,7 +42,7 @@ class ItemChestSorter: JavaPlugin() {
             registerListener()
 
             server.consoleSender.sendMessage("Item-Chest-Sorter loaded.")
-        }else{
+        } else {
             server.consoleSender.sendMessage("Item-Chest-Sorter loaded in ghost mode! Nothing will work. If this is not intended look in the config.yml.")
         }
     }
@@ -55,24 +54,24 @@ class ItemChestSorter: JavaPlugin() {
     }
 
     fun reload() {
-        if(db.saveJSON()) {
+        if (db.saveJSON()) {
             server.consoleSender.sendMessage("Item-Chest-Sorter successfully saved its database")
             HandlerList.unregisterAll(this)
             this.reloadConfig()
             registerListener()
             server.consoleSender.sendMessage("Item-Chest-Sorter reloaded.")
-        }else{
+        } else {
             server.consoleSender.sendMessage("Item-Chest-Sorter DID NOT successfully save its database before shutdown")
         }
     }
 
     override fun onDisable() {
-        if(db.saveJSON()) {
+        if (db.saveJSON()) {
             server.consoleSender.sendMessage("Item-Chest-Sorter successfully saved its database before shutdown")
-        }else{
+        } else {
             server.consoleSender.sendMessage("Item-Chest-Sorter DID NOT successfully save its database before shutdown")
         }
-        if(timer != null) {
+        if (timer != null) {
             timer!!.cancel()
         }
         HandlerList.unregisterAll(this)
@@ -86,15 +85,12 @@ class ItemChestSorter: JavaPlugin() {
      * @author Flo Dörr
      */
     private fun registerListener() {
-        if(config.getBoolean("enabled")) {
+        if (config.getBoolean("enabled")) {
             //register listener
             server.pluginManager.registerEvents(Listener(db, this), this)
             // unregister event if so configured
-            if(!config.getBoolean("sendFromHopperOrSender", false)) {
+            if (!config.getBoolean("sendFromHopperOrSender", false)) {
                 InventoryMoveItemEvent.getHandlerList().unregister(this)
-            }
-            if(config.getBoolean("allowBreakOfChest", true)) {
-                BlockBreakEvent.getHandlerList().unregister(this)
             }
         }
     }
@@ -111,9 +107,9 @@ class ItemChestSorter: JavaPlugin() {
         // register tab completer
         getCommand(BASE_COMMAND)!!.setTabCompleter { _, _, _, args ->
             val completions = ArrayList<String>()
-            if(args.size == 1){
+            if (args.size == 1) {
                 StringUtil.copyPartialMatches(args[0], COMMANDS[0], completions)
-            }else if(args.size == 2 && args[1] != "reload") {
+            } else if (args.size == 2 && args[1] != "reload") {
                 if (args[0].lowercase(Locale.getDefault()) == COMMANDS[0][2]) {
                     return@setTabCompleter listOf(COMMANDS[1][1])
                 } else {
@@ -131,7 +127,7 @@ class ItemChestSorter: JavaPlugin() {
      */
     private fun createConfig() {
         val configFile = Paths.get(dataFolder.absolutePath, "config.yml").toFile()
-        if(!configFile.exists()) {
+        if (!configFile.exists()) {
             this.saveDefaultConfig()
         }
     }
@@ -146,9 +142,9 @@ class ItemChestSorter: JavaPlugin() {
     @Suppress("UNCHECKED_CAST")
     fun getSets(): ArrayList<ArrayList<String>> {
         val sets = this.config.getList("sets")
-        return if(sets != null) {
+        return if (sets != null) {
             sets as ArrayList<ArrayList<String>>
-        }else{
+        } else {
             ArrayList()
         }
     }
@@ -165,23 +161,23 @@ class ItemChestSorter: JavaPlugin() {
     fun isItemInSet(itemInChest: ItemStack, itemInItemFrames: List<ItemStack>): Boolean {
         val sets = getSets()
 
-        if(this.config.getBoolean("enableSetsRegex", false)) {
-            if(setsRegex.isEmpty()){
+        if (this.config.getBoolean("enableSetsRegex", false)) {
+            if (setsRegex.isEmpty()) {
                 // Keeps regex in buffer
-                setsRegex = ArrayList(sets.map {
-                    set -> ArrayList(set.map {
-                        p -> p.toRegex(RegexOption.IGNORE_CASE)
+                setsRegex = ArrayList(sets.map { set ->
+                    ArrayList(set.map { p ->
+                        p.toRegex(RegexOption.IGNORE_CASE)
                     })
                 })
             }
             // returns the matching set
             return setsRegex.any { s ->
                 (s.any { p -> p.matches(itemInChest.type.key.key) }
-                && s.any { p -> itemInItemFrames.any { item -> p.matches(item.type.key.key) } })
+                        && s.any { p -> itemInItemFrames.any { item -> p.matches(item.type.key.key) } })
             }
-        }else{
+        } else {
             for (set in sets) {
-                if(set.contains(itemInChest.type.key.key) && itemInItemFrames.any { item -> set.contains(item.type.key.key) }) {
+                if (set.contains(itemInChest.type.key.key) && itemInItemFrames.any { item -> set.contains(item.type.key.key) }) {
                     return true
                 }
             }

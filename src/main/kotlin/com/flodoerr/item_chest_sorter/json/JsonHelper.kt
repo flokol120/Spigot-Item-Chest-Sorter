@@ -130,6 +130,30 @@ class JsonHelper(dataFolder: File, commandSender: ConsoleCommandSender? = null, 
     }
 
     /**
+     * deletes a sender or receiver chest by given coordinates
+     * @param cords coordinates of a potential chest
+     * @return true if found, false if not
+     *
+     * @author Flo Dörr
+     */
+    fun removeExistingChest(cords: Cords): Boolean {
+        val json = getJSON()
+        for (sender in json.sender) {
+            for (receiver in sender.receiver) {
+                if(receiver.cords.left == cords || receiver.cords.right == cords) {
+                    removeReceiver(receiver.rid)
+                    return true
+                }
+            }
+            if(sender.cords.left == cords || sender.cords.right == cords) {
+                removeSender(sender.sid)
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
      * returns all saved sender
      * @return List of sender
      *
