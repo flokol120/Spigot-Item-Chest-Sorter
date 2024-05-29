@@ -10,6 +10,7 @@ import org.bukkit.block.*
 import org.bukkit.block.data.Directional
 import org.bukkit.command.CommandSender
 import org.bukkit.enchantments.Enchantment
+import org.bukkit.entity.Entity
 import org.bukkit.entity.HumanEntity
 import org.bukkit.entity.ItemFrame
 import org.bukkit.entity.Player
@@ -20,6 +21,7 @@ import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.inventory.InventoryType
+import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.DoubleChestInventory
 import org.bukkit.inventory.Inventory
@@ -39,26 +41,24 @@ var currentSender: HashMap<String, String?> = HashMap()
 
 class Listener(private val db: JsonHelper, private val main: ItemChestSorter) : Listener {
 
-    @EventHandler(priority = EventPriority.LOWEST)
+//    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler()
     fun onPlayerInteractEvent(e: PlayerInteractEvent) {
         if (e.item != null && e.item!!.itemMeta != null && e.item?.type == Material.WOODEN_HOE) {
             val item = e.item!!
             val itemMeta = item.itemMeta!!
 
-            val arrowLevel = itemMeta.getEnchantLevel(Enchantment.ARROW_DAMAGE)
-            val fireLevel = itemMeta.getEnchantLevel(Enchantment.ARROW_FIRE)
-
-            if (fireLevel == 65535 || arrowLevel == 65535) {
+            if (listOf(SENDER_HOE_NAME, RECEIVER_HOE_NAME).contains(itemMeta.displayName)) {
                 if (e.clickedBlock != null && e.clickedBlock?.state is Container) {
                     if (e.clickedBlock?.state !is ShulkerBox || e.clickedBlock?.state is ShulkerBox && main.config.getBoolean("allowShulkerBoxes", false)) {
                         val displayName = itemMeta.displayName
 
                         val block = e.clickedBlock!!
 
-                        if (fireLevel == 65535 && displayName == SENDER_HOE_NAME) {
+                        if (displayName == SENDER_HOE_NAME) {
                             e.isCancelled = true
                             handleSenderHoe(e.player, block)
-                        } else if (arrowLevel == 65535 && displayName == RECEIVER_HOE_NAME) {
+                        } else if (displayName == RECEIVER_HOE_NAME) {
                             e.isCancelled = true
                             handleReceiverHoe(e.player, block)
                         }

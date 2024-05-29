@@ -1,17 +1,19 @@
 version: "3.9"
 services:
   minecraft:
-    image: "buddyspencer/papermc:1.20.2"
+    image: "buddyspencer/papermc:1.20.6"
     restart: always
     container_name: "mcserver"
     environment:
       MEMORYSIZE: "1G"
       PAPERMC_FLAGS: ""
+      JAVAFLAGS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005"
     volumes:
       - "./server:/data:rw"
-      - "./build/ItemChestSorter-1.14.4.jar:/data/plugins/ItemChestSorter.jar:ro"
+      - "./build/ItemChestSorter-1.14.5.jar:/data/plugins/ItemChestSorter.jar:ro"
     ports:
       - "25565:25565"
+      - "5005:5005"
     # The following allow `docker attach mcserver` to work
     stdin_open: true
     tty: true

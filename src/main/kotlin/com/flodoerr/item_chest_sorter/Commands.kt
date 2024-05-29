@@ -3,6 +3,8 @@ package com.flodoerr.item_chest_sorter
 import com.flodoerr.item_chest_sorter.json.JsonHelper
 import org.bukkit.ChatColor
 import org.bukkit.Material
+import org.bukkit.attribute.Attribute
+import org.bukkit.attribute.AttributeModifier
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -10,18 +12,19 @@ import org.bukkit.command.ConsoleCommandSender
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.Damageable
 import java.util.*
 import java.net.URLDecoder
 
 
-class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): CommandExecutor {
+class Commands(private val db: JsonHelper, private val ics: ItemChestSorter) : CommandExecutor {
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         // commands can only be used by a player
         if (sender is ConsoleCommandSender) {
             sender.sendMessage("this commands can only be used in-game")
             return true
         }
-        if(args.isEmpty()) {
+        if (args.isEmpty()) {
             return false
         }
         // switch block for the sub commands
@@ -29,6 +32,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
             "add" -> {
                 return getHoes(args, sender)
             }
+
             "select" -> {
                 return if (args[1].lowercase(Locale.getDefault()) == "sender") {
                     val permission = "ics.select.sender"
@@ -42,6 +46,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                     false
                 }
             }
+
             "remove" -> {
                 // if two args are passed, there is no remove command with an id
                 if (args.size == 2) {
@@ -86,17 +91,20 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                             }
                             return true
                         }
+
                         else -> {
                             return false
                         }
                     }
                 }
             }
+
             "reload" -> {
                 ics.reload()
                 sender.sendMessage("${ChatColor.GREEN}Reload complete.")
                 return true
             }
+
             else -> return false
         }
     }
@@ -119,6 +127,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                     showNoPermissionMessage(sender, permission)
                 }
             }
+
             "receiver" -> {
                 val permission = "ics.create.receiver"
                 if (sender.hasPermission(permission)) {
@@ -127,6 +136,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
                     showNoPermissionMessage(sender, permission)
                 }
             }
+
             else -> return false
         }
         return true
@@ -140,11 +150,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
      */
     private fun giveSenderSelectionTool(sender: Player) {
         val item = ItemStack(Material.WOODEN_HOE)
-        val itemMeta = item.itemMeta!!
-        // add some stuff to find the right item in the listener
-        itemMeta.setDisplayName(SENDER_HOE_NAME)
-        itemMeta.addEnchant(Enchantment.ARROW_FIRE, -1, true)
-        item.itemMeta = itemMeta
+        modifyItem(item, SENDER_HOE_NAME)
 
         sender.inventory.addItem(item)
 
@@ -159,15 +165,30 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
      */
     private fun giveReceiverSelectionTool(sender: Player) {
         val item = ItemStack(Material.WOODEN_HOE)
-        val itemMeta = item.itemMeta!!
-        // add some stuff to find the right item in the listener
-        itemMeta.setDisplayName(RECEIVER_HOE_NAME)
-        itemMeta.addEnchant(Enchantment.ARROW_DAMAGE, -1, true)
-        item.itemMeta = itemMeta
-
+        modifyItem(item, RECEIVER_HOE_NAME)
         sender.inventory.addItem(item)
 
         sender.sendMessage("${ChatColor.GREEN}Here you go! Right click a single or double chest to add or remove a receiver.")
+    }
+
+    /**
+     * modifies an ics tool
+     *
+     * @param itemStack item to be modified
+     * @param name name to set on the item
+     */
+    private fun modifyItem(itemStack: ItemStack, name: String) {
+        val itemMeta = itemStack.itemMeta!!
+        val itemDamageable = itemMeta as Damageable
+        itemDamageable.damage = if (name == SENDER_HOE_NAME) {
+            1
+        } else {
+            58
+        }
+        // add some stuff to find the right item in the listener
+        itemMeta.setDisplayName(name)
+        itemMeta.addEnchant(Enchantment.BANE_OF_ARTHROPODS, 1, true)
+        itemStack.itemMeta = itemMeta
     }
 
     /**
@@ -178,7 +199,7 @@ class Commands(private val db: JsonHelper, private val ics: ItemChestSorter): Co
      *
      * @author Flo Dörr
      */
-    private fun showNoPermissionMessage(sender: CommandSender, permission: String){
+    private fun showNoPermissionMessage(sender: CommandSender, permission: String) {
         sender.sendMessage("${ChatColor.RED}You do not have enough permissions to do this (${permission}).")
     }
 }
