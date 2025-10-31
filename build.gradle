@@ -1,10 +1,10 @@
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.6.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.2.20'
 }
 
 group 'com.flodoerr'
-version '1.14.5'
+version '1.14.6'
 
 repositories {
     mavenCentral()
@@ -24,14 +24,7 @@ repositories {
 
 dependencies {
     implementation 'com.beust:klaxon:5.6'
-    compileOnly 'org.spigotmc:spigot-api:1.20.6-R0.1-SNAPSHOT'
-}
-
-compileKotlin {
-    kotlinOptions.jvmTarget = "16"
-}
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "16"
+    compileOnly 'org.spigotmc:spigot-api:1.21.10-R0.1-SNAPSHOT'
 }
 
 jar {
@@ -44,7 +37,7 @@ jar {
     from('src/main') {
         include '*.yml'
     }
-    baseName = 'ItemChestSorter'
+    archiveBaseName = 'ItemChestSorter'
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
@@ -58,6 +51,6 @@ jar {
 
 task releaseJar(type: Jar) {
     destinationDirectory.set(file(buildDir))
-    baseName = 'ItemChestSorter'
+    archiveBaseName = 'ItemChestSorter'
     with jar
 }

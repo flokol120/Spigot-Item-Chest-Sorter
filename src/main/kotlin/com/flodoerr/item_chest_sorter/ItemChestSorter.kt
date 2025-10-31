@@ -1,7 +1,6 @@
 package com.flodoerr.item_chest_sorter
 
 import com.flodoerr.item_chest_sorter.json.JsonHelper
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.event.HandlerList
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.inventory.ItemStack
@@ -9,7 +8,6 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.util.StringUtil
 import java.nio.file.Paths
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.concurrent.fixedRateTimer
 
 class ItemChestSorter : JavaPlugin() {

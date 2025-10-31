@@ -1,5 +1,5 @@
 name: "Item-Chest-Sorter"
-version: "1.14.5"
+version: "1.14.6"
 load: POSTWORLD
 
 author: "Flo Dörr"
@@ -17,7 +17,7 @@ commands:
       - ics
       - itemchestsorter
 
-api-version: "1.20"
+api-version: "1.21"
 
 permissions:
   ics.*:

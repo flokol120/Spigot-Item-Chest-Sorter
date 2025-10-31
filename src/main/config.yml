@@ -1,4 +1,4 @@
-# Version 1.14.4
+# Version 1.14.6
 
 # If enabled = false the plugin will not do anything
 enabled: true
@@ -13,8 +13,7 @@ autoSaveInterval: 5
 # animation configuration
 animation:
   # If true items are being animated. If false no animation will be drawn
-  # IMPORTANT: Animations are not compatible with 1.19.2 and above!
-  enabled: false
+  enabled: true
   # If true all items are being animated. If false only one item will be animated (only used if enabled = true)
   animateAll: false
 
